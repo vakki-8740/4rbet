@@ -5,6 +5,30 @@
 (function () {
   "use strict";
 
+  /* ---------- Opening animation (splash) ---------- */
+  var splash = document.getElementById("splash");
+
+  if (splash) {
+    var reduceMotion = window.matchMedia &&
+                       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    var SPLASH_MS = reduceMotion ? 120 : 2000;
+
+    document.body.classList.add("is-splash");
+
+    var dismissSplash = function () {
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+      document.body.classList.remove("is-splash");
+    };
+
+    setTimeout(dismissSplash, SPLASH_MS);
+
+    // safety net - tab background me ruka ho to bhi na phanse
+    window.addEventListener("load", function () {
+      setTimeout(dismissSplash, SPLASH_MS + 1500);
+    });
+  }
+
   /* ---------- Footer year ---------- */
   document.querySelectorAll("#year, .year").forEach(function (el) {
     el.textContent = new Date().getFullYear();

@@ -919,6 +919,49 @@ img { max-width: 100%; display: block; }
   color: var(--muted);
 }
 
+/* ========== OPENING ANIMATION (SPLASH) ========== */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  /* JS ke chhoot jane pe bhi CSS khud se hat jata hai */
+  animation: splash-out .4s ease 1.6s both;
+}
+
+.splash-logo {
+  height: clamp(58px, 22vw, 96px);
+  width: auto;
+  display: block;
+  object-fit: contain;
+  animation: splash-logo 2s cubic-bezier(.22, .61, .36, 1) both;
+}
+
+body.is-splash { overflow: hidden; }
+
+@keyframes splash-out {
+  from { opacity: 1; visibility: visible; }
+  to   { opacity: 0; visibility: hidden; }
+}
+
+@keyframes splash-logo {
+  0%   { opacity: 0; transform: scale(.86); }
+  22%  { opacity: 1; transform: scale(1); }
+  45%  { opacity: 1; transform: scale(1.035); }
+  65%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash { animation: splash-out .01ms linear both; }
+  .splash-logo { animation: none; opacity: 1; transform: none; }
+}
+
 /* ========== RESPONSIVE ========== */
 
 @media (max-width: 900px) {
