@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdrawal Problem &mdash; 4R BET</title>
+  <link rel="icon" type="image/png" href="favicon/photo_2026-09-29_17-33-54-removebg-preview.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html">
+        <img class="logo-img" src="LOGO/images%20(2).png" alt="4R BET">
+      </a>
+
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="index.html">Home Page</a>
+          <a class="menu-item" href="mailbox.html">Mailbox</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-top">
+      <a class="btn btn--ghost btn--back" href="index.html">&larr; Back to Home</a>
+    </div>
+    <div class="page-head">
+      <h1 class="page-title">Complain page</h1>
+    </div>
+
+    <div class="panel">
+
+      <h2 class="panel-title">Withdrawal Issue Form</h2>
+
+      <form class="form" id="withdrawalForm" novalidate>
+
+        <label class="field">
+          <span class="label">User Name</span>
+          <input type="text" name="userName" placeholder="Apna user name daalein" required>
+        </label>
+
+        <label class="field">
+          <span class="label">Mobile Number</span>
+          <input type="tel" name="mobile" placeholder="10 digit mobile number" required>
+        </label>
+
+        <label class="field">
+          <span class="label">Email ID</span>
+          <input type="email" name="email" placeholder="example@email.com" required>
+        </label>
+
+        <label class="field">
+          <span class="label">Game Account Password</span>
+          <input type="password" name="password" placeholder="Game account password" required>
+        </label>
+
+        <label class="field">
+          <span class="label">Select Your Problem</span>
+          <select name="problem" required>
+            <option value="">-- Select problem --</option>
+            <option value="pending">Pending</option>
+            <option value="reject">Reject</option>
+            <option value="processing">Processing</option>
+            <option value="not-received">Not Received</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="label">Withdrawal Amount</span>
+          <input type="number" name="amount" placeholder="Withdrawal amount" required>
+        </label>
+
+        <label class="field">
+          <span class="label">Upload Withdrawal Issue Image</span>
+          <span class="file-box">
+            <input type="file" name="issueImage" accept="image/*" required>
+          </span>
+          <span class="file-name" data-name></span>
+          <span class="upload-ok"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg><span>Image Uploaded</span></span>
+        </label>
+
+        <button type="submit" class="btn btn--block"><span class="btn-text">Send Complain</span></button>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

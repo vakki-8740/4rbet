@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mailbox &mdash; 4R BET</title>
+  <link rel="icon" type="image/png" href="favicon/photo_2026-09-29_17-33-54-removebg-preview.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html">
+        <img class="logo-img" src="LOGO/images%20(2).png" alt="4R BET">
+      </a>
+
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="index.html">Home Page</a>
+          <a class="menu-item" href="mailbox.html">Mailbox</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <h1 class="page-title">Mailbox</h1>
+    </div>
+
+    <div class="mail-stats">
+      <span class="stat"><strong id="statTotal">0</strong> Total</span>
+      <span class="stat"><strong id="statPending">0</strong> Pending</span>
+      <span class="stat"><strong id="statDone">0</strong> Successful</span>
+    </div>
+
+    <div class="mail-list" id="mailList"></div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
