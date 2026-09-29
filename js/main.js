@@ -306,11 +306,11 @@
     var d = new Date(iso);
     if (isNaN(d)) return "-";
     var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+    var h = d.getHours();
+    var h12 = h % 12 || 12;
     return d.getDate() + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() +
-           ", " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + " " + ampm(d.getHours());
+           ", " + h12 + ":" + pad(d.getMinutes()) + " " + (h >= 12 ? "PM" : "AM");
   }
-
-  function ampm(h) { return h >= 12 ? "PM" : "AM"; }
 
   /* ---------- Image viewer ---------- */
 
@@ -590,11 +590,17 @@
     });
   });
 
-  /* ---------- Online chat (demo bot) ---------- */
+  /* ==========================================
+     ONLINE CHAT
+     ========================================== */
+
   var chatForm = document.getElementById("chatForm");
   var chatBox  = document.getElementById("chatMessages");
   var chatIn   = document.getElementById("chatField");
-  var startBtn = document.getElementById("startChat");
+  var imageIn  = document.getElementById("imageInput");
+  var fileIn   = document.getElementById("fileInput");
+
+  if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
   var replies = [
     "Aapka message mil gaya. Kya aap apna User ID de sakte hain?",
@@ -603,21 +609,260 @@
   ];
   var rIndex = 0;
 
+  function stamp() {
+    var d = new Date();
+    var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+    var h = d.getHours();
+    var h12 = h % 12 || 12;
+    return d.getDate() + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() +
+           ", " + h12 + ":" + pad(d.getMinutes()) + " " + (h >= 12 ? "PM" : "AM");
+  }
+
+  /* ---------- Chat message popup ---------- */
+
+  var chatPopup = document.createElement("div");
+  chatPopup.className = "modal-backdrop";
+  chatPopup.setAttribute("role", "dialog");
+  chatPopup.setAttribute("aria-modal", "true");
+
+  chatPopup.innerHTML =
+    '<div class="modal chat-popup">' +
+      '<button type="button" class="popup-x" aria-label="Close">&times;</button>' +
+      '<h3 class="modal-title chat-popup-title">Chat Message</h3>' +
+      '<p class="chat-popup-when"></p>' +
+      '<div class="chat-popup-body"></div>' +
+      '<div class="chat-popup-acts">' +
+        '<button type="button" class="cpa cpa--edit">Edit</button>' +
+        '<button type="button" class="cpa cpa--replay">Replay</button>' +
+        '<button type="button" class="cpa cpa--delete">Delete</button>' +
+      '</div>' +
+      '<div class="chat-popup-edit" style="display:none">' +
+        '<textarea rows="3" class="popup-edit-field"></textarea>' +
+        '<div class="popup-edit-row">' +
+          '<button type="button" class="btn btn--ghost popup-edit-save">Save</button>' +
+          '<button type="button" class="btn btn--ghost popup-edit-cancel">Cancel</button>' +
+        '</div>' +
+      '</div>' +
+      '<button type="button" class="btn btn--block popup-close">Close</button>' +
+    '</div>';
+
+  document.body.appendChild(chatPopup);
+
+  var ppTitle  = chatPopup.querySelector(".chat-popup-title");
+  var ppWhen   = chatPopup.querySelector(".chat-popup-when");
+  var ppBody   = chatPopup.querySelector(".chat-popup-body");
+  var ppEdit   = chatPopup.querySelector(".chat-popup-edit");
+  var ppField  = chatPopup.querySelector(".popup-edit-field");
+  var ppActs   = chatPopup.querySelector(".chat-popup-acts");
+
+  var editingMsg = null;
+
+  function closePopup() {
+    chatPopup.classList.remove("is-open");
+    ppEdit.style.display = "none";
+    ppActs.style.display = "";
+    editingMsg = null;
+  }
+
+  function openPopup(node) {
+    var textEl = node.querySelector(".msg-text");
+    var imgEl  = node.querySelector(".msg-image");
+
+    ppTitle.textContent = node.dataset.who === "user" ? "Your Message" : "Support Agent";
+    ppWhen.innerHTML = "<strong>Sent:</strong> " + node.dataset.time;
+
+    ppBody.innerHTML = "";
+
+    if (imgEl) {
+      var big = document.createElement("img");
+      big.className = "popup-img";
+      big.src = imgEl.getAttribute("src");
+      big.alt = imgEl.getAttribute("alt") || "image";
+      ppBody.appendChild(big);
+
+      var nm = document.createElement("p");
+      nm.className = "popup-file-name";
+      nm.textContent = imgEl.getAttribute("data-name") || "";
+      ppBody.appendChild(nm);
+    } else {
+      var p = document.createElement("p");
+      p.className = "popup-text";
+      p.textContent = textEl ? textEl.textContent : "";
+      ppBody.appendChild(p);
+    }
+
+    editingMsg = node;
+    chatPopup.classList.add("is-open");
+  }
+
+  chatPopup.querySelector(".popup-x").addEventListener("click", closePopup);
+  chatPopup.querySelector(".popup-close").addEventListener("click", closePopup);
+  chatPopup.addEventListener("click", function (e) {
+    if (e.target === chatPopup) closePopup();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && chatPopup.classList.contains("is-open")) closePopup();
+  });
+
+  /* Edit */
+  chatPopup.querySelector(".cpa--edit").addEventListener("click", function () {
+    if (!editingMsg) return;
+    var t = editingMsg.querySelector(".msg-text");
+    if (!t) return;                       // image message edit nahi hoti
+    ppField.value = t.textContent;
+    ppEdit.style.display = "block";
+    ppActs.style.display = "none";
+    ppField.focus();
+  });
+
+  chatPopup.querySelector(".popup-edit-cancel").addEventListener("click", closePopup);
+
+  chatPopup.querySelector(".popup-edit-save").addEventListener("click", function () {
+    if (!editingMsg) return;
+    var t = editingMsg.querySelector(".msg-text");
+    if (t) t.textContent = ppField.value.trim();
+    closePopup();
+  });
+
+  /* Replay */
+  chatPopup.querySelector(".cpa--replay").addEventListener("click", function () {
+    if (!editingMsg) return;
+    var t = editingMsg.querySelector(".msg-text");
+    if (t) addMsg(t.textContent, "user", "You");
+    closePopup();
+  });
+
+  /* Delete */
+  chatPopup.querySelector(".cpa--delete").addEventListener("click", function () {
+    if (editingMsg && editingMsg.parentNode) editingMsg.parentNode.removeChild(editingMsg);
+    closePopup();
+  });
+
+  /* ---------- Add message ---------- */
+
   function addMsg(text, who, name) {
     var d = document.createElement("div");
     d.className = "msg msg--" + who;
+    d.dataset.who = who;
+    d.dataset.time = stamp();
+    d.setAttribute("role", "button");
+    d.setAttribute("tabindex", "0");
+
     if (name) {
       var n = document.createElement("span");
       n.className = "msg-name";
       n.textContent = name;
       d.appendChild(n);
     }
+
     var p = document.createElement("p");
+    p.className = "msg-text";
     p.textContent = text;
     d.appendChild(p);
+
+    d.addEventListener("click", function () { openPopup(d); });
+    d.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openPopup(d);
+      }
+    });
+
+    chatBox.appendChild(d);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return d;
+  }
+
+  /* ---------- Add image / file message ---------- */
+
+  function addFileMsg(src, name, isImage) {
+    var d = document.createElement("div");
+    d.className = "msg msg--user msg--file";
+    d.dataset.who = "user";
+    d.dataset.time = stamp();
+    d.setAttribute("role", "button");
+    d.setAttribute("tabindex", "0");
+
+    var n = document.createElement("span");
+    n.className = "msg-name";
+    n.textContent = "You";
+    d.appendChild(n);
+
+    if (isImage) {
+      var img = document.createElement("img");
+      img.className = "msg-image";
+      img.setAttribute("data-name", name);
+      img.src = src;
+      img.alt = name;
+      d.appendChild(img);
+
+      var cap = document.createElement("span");
+      cap.className = "msg-file-cap";
+      cap.textContent = name;
+      d.appendChild(cap);
+    } else {
+      var ico = document.createElement("span");
+      ico.className = "msg-file-ico";
+      ico.innerHTML =
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M14 2.5H7.5A2.5 2.5 0 0 0 5 5v14a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 19V7.5L14 2.5Z"></path>' +
+        '<path d="M14 2.5V7a.5.5 0 0 0 .5.5H19"></path></svg>';
+      d.appendChild(ico);
+
+      var lbl = document.createElement("span");
+      lbl.className = "msg-file-name";
+      lbl.textContent = name;
+      d.appendChild(lbl);
+    }
+
+    d.addEventListener("click", function () { openPopup(d); });
+    d.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openPopup(d);
+      }
+    });
+
     chatBox.appendChild(d);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+
+  /* ---------- Image / file pickers ---------- */
+
+  var btnImage = document.getElementById("btnImage");
+  var btnFile  = document.getElementById("btnFile");
+
+  if (btnImage && imageIn) {
+    btnImage.addEventListener("click", function () { imageIn.click(); });
+  }
+
+  if (btnFile && fileIn) {
+    btnFile.addEventListener("click", function () { fileIn.click(); });
+  }
+
+  if (imageIn) {
+    imageIn.addEventListener("change", function () {
+      var f = imageIn.files && imageIn.files[0];
+      if (!f) return;
+      var url = URL.createObjectURL(f);
+      addFileMsg(url, f.name, true);
+      imageIn.value = "";
+    });
+  }
+
+  if (fileIn) {
+    fileIn.addEventListener("change", function () {
+      var f = fileIn.files && fileIn.files[0];
+      if (!f) return;
+      var url = URL.createObjectURL(f);
+      addFileMsg(url, f.name, false);
+      fileIn.value = "";
+    });
+  }
+
+  /* ---------- Send text ---------- */
 
   if (chatForm && chatBox && chatIn) {
     chatForm.addEventListener("submit", function (e) {
@@ -632,13 +877,6 @@
         addMsg(replies[rIndex % replies.length], "agent", "Support Agent");
         rIndex++;
       }, 600);
-    });
-  }
-
-  if (startBtn) {
-    startBtn.addEventListener("click", function () {
-      addMsg("Live chat shuru! Apni problem batayein.", "agent", "Support Agent");
-      if (chatIn) chatIn.focus();
     });
   }
 

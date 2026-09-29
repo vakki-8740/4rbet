@@ -36,19 +36,47 @@
       <a class="btn btn--ghost btn--back" href="index.html">&larr; Back to Home</a>
     </div>
     <div class="page-head">
-      <h1 class="page-title">Complain page</h1>
+      <h1 class="page-title">Online Chat</h1>
     </div>
 
     <div class="panel">
-      <!-- IMAGE PLACEHOLDER (baad me add karenge) -->
-      <div class="img-box img-box--empty"><span class="img-note">Chat Image (baad me)</span></div>
-
       <div class="chat-box">
         <div class="chat-messages" id="chatMessages">
           <div class="msg msg--agent">
-            <span class="msg-name">Support Agent</span>
-            <p>Assalam-o-Alaikum! Kya help chahiye? Apna message likhiye.</p>
+            <span class="msg-name">4RABET HELP CENTER</span>
+            <p><strong>👋 Welcome to 4RABET HELP CENTER</strong></p>
+            <p>Hello! 👋<br>How can we help you today?</p>
+            <p>Please select a topic below or type your question, and our support team will assist you.</p>
+            <p>💬 You can ask about:<br>
+              • Account &amp; Login<br>
+              • Deposit<br>
+              • Withdrawal<br>
+              • Verification<br>
+              • Technical Issues<br>
+              • Other Help</p>
+            <p>⏱️ Please allow some time for our team to respond.</p>
+            <p><strong>4RABET HELP CENTER</strong><br>We're here to help.</p>
           </div>
+        </div>
+
+        <div class="chat-actions">
+          <button type="button" class="chat-act" id="btnImage" title="Send image">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+              <circle cx="8.5" cy="9.5" r="1.6"></circle>
+              <path d="M21 16l-5-5-6.5 6.5"></path>
+            </svg>
+            <span>Image</span>
+          </button>
+          <button type="button" class="chat-act" id="btnFile" title="Send file or PDF">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2.5H7.5A2.5 2.5 0 0 0 5 5v14a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 19V7.5L14 2.5Z"></path>
+              <path d="M14 2.5V7a.5.5 0 0 0 .5.5H19"></path>
+            </svg>
+            <span>File / PDF</span>
+          </button>
+          <input type="file" id="imageInput" accept="image/*" hidden>
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" hidden>
         </div>
 
         <form class="chat-input" id="chatForm">
@@ -56,8 +84,6 @@
           <button type="submit" class="btn btn--send">Send</button>
         </form>
       </div>
-
-      <button class="btn btn--block" id="startChat">Start Live Chat</button>
     </div>
   </main>
 
