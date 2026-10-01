@@ -46,6 +46,18 @@
       </a>
     </div>
 
+    <!-- ---------- LOADING / NOT FOUND (jab tak cloud se record na aaye) ---------- -->
+    <div id="dLoading" class="adm-box" style="display:none">
+      <div class="adm-empty" style="padding:44px 20px">
+        <div class="adm-empty-ico" id="dLoadIco"></div>
+        <h3 id="dLoadTitle">Loading complaint...</h3>
+        <p id="dLoadText">Cloud se data aa raha hai.</p>
+        <a class="btn" href="index.html" id="dLoadBtn" style="display:none">Back to Home</a>
+      </div>
+    </div>
+
+    <div id="dBody" style="display:none">
+
     <!-- ---------- USER HEADER ---------- -->
     <section class="adm-detail-head">
       <span class="adm-detail-ava"><img src="USER-ICON/2288510.png" alt="" data-ua></span>
@@ -88,6 +100,8 @@
       </div>
     </section>
 
+    </div><!-- /dBody -->
+
   </main>
 
   <footer class="site-footer">
@@ -110,26 +124,46 @@
 
       var id  = (new URLSearchParams(window.location.search).get("id") || "").trim();
 
-      if (!id) { missing(); return; }
+      var loadingEl = document.getElementById("dLoading");
+      var bodyEl    = document.getElementById("dBody");
+      var rec = null;
 
-      var rec = A.findById(id);
-      if (rec) draw(rec);
-      else missing();
+      if (!id) { showMissing(); return; }
 
-      /* Server se fresh record (dusre device par status badla ho to) */
+      /* Cache me hai to turant dikha do */
+      var cached = A.findById(id);
+      if (cached) { showBody(); draw(cached); }
+      else showLoading();
+
+      /* Cloud se fresh record (dusre device par status badla ho / cache khaali ho) */
       A.refresh().then(function (list) {
         var fresh = list.filter(function (r) { return r.id === id; })[0];
-        if (fresh) draw(fresh);
+        if (fresh) { showBody(); draw(fresh); }
+        else if (!rec) showMissing();
       });
 
-      function missing() {
-        document.querySelector(".adm").innerHTML =
-          '<div class="adm-empty" style="border:1px dashed #d1d5db;border-radius:14px;background:#f6f8fb">' +
-            '<div class="adm-empty-ico">' + A.ICON.warn + '</div>' +
-            '<h3>Complaint nahi mili</h3>' +
-            '<p>Ye complaint delete ho chuki hai ya link galat hai.</p>' +
-            '<a class="btn" href="index.html">Back to Home</a>' +
-          '</div>';
+      function showLoading() {
+        loadingEl.style.display = "block";
+        bodyEl.style.display = "none";
+        document.getElementById("dLoadIco").innerHTML = A.ICON.inbox;
+        document.getElementById("dLoadTitle").textContent = "Loading complaint...";
+        document.getElementById("dLoadText").textContent = "Cloud se data aa raha hai.";
+        document.getElementById("dLoadBtn").style.display = "none";
+      }
+
+      function showBody() {
+        loadingEl.style.display = "none";
+        bodyEl.style.display = "block";
+      }
+
+      function showMissing() {
+        loadingEl.style.display = "block";
+        bodyEl.style.display = "none";
+        document.getElementById("dLoadIco").innerHTML = A.ICON.warn;
+        document.getElementById("dLoadTitle").textContent = "Complaint nahi mili";
+        document.getElementById("dLoadText").textContent =
+          "Ye complaint delete ho chuki hai ya link galat hai.";
+        document.getElementById("dLoadBtn").style.display = "inline-flex";
       }
 
       var statusEl = document.getElementById("dStatus");
@@ -143,6 +177,8 @@
 
       function draw(record) {
       rec = record;
+
+      try {
       var d = rec.data || {};
 
       /* ---------- header ---------- */
@@ -187,6 +223,18 @@
             if (im && im.dataUrl) A.openViewer(im.dataUrl, im.name);
           });
         });
+      }
+      } catch (err) {
+        /* kuch bhi render fail ho to user ko khali card na dikhe */
+        var box = document.getElementById("dRows");
+        if (box) {
+          box.innerHTML = '<div class="adm-row">' +
+            '<span class="adm-row-k">Error</span>' +
+            '<span class="adm-row-v is-plain" style="color:#b91c1c">' +
+              A.esc(err && err.message ? err.message : String(err)) + '</span>' +
+          '</div>';
+        }
+        console.error("draw failed:", err);
       }
       }
 
