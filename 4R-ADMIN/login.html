@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login &mdash; 4R-ADMIN</title>
+  <link rel="icon" type="image/jpeg" href="FAVICON/photo_2026-10-01_23-26-57.jpg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <style>
+    /* login page ka apna layout */
+    .adm-login {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 28px 18px;
+    }
+
+    .adm-login-logo {
+      width: 82px;
+      height: 82px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      object-fit: cover;
+      box-shadow: var(--shadow-hov);
+    }
+
+    .adm-login h1 { font-size: 23px; font-weight: 800; letter-spacing: .5px; }
+    .adm-login h1 small {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--blue);
+    }
+
+    .adm-login p.sub { margin-top: -8px; font-size: 14px; color: var(--muted); }
+
+    .adm-login .panel { width: 100%; max-width: 400px; }
+
+    .pwd-wrap { position: relative; }
+
+    .pwd-eye {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .pwd-eye:hover { background: var(--bg-soft); color: var(--text); }
+
+    .adm-login .pwd-wrap input { padding-right: 46px; }
+
+    .adm-err {
+      display: none;
+      padding: 12px 14px;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #7f1d1d;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .adm-err.is-show { display: block; }
+
+    .adm-login-foot { font-size: 12.5px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body data-noauth="1">
+
+  <!-- ================= HEADER (menu left) ================= -->
+  <header class="site-header">
+    <div class="header-inner adm-header">
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="../index.html">User Panel</a>
+        </nav>
+      </div>
+      <a class="logo" href="login.html">
+        <img class="logo-img adm-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+      </a>
+    </div>
+  </header>
+
+  <main class="adm-login">
+
+    <img class="adm-login-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+
+    <h1>4R<small>ADMIN</small></h1>
+    <p class="sub">Panel me login karein</p>
+
+    <div class="panel">
+      <h2 class="panel-title">Admin Login</h2>
+
+      <form class="form" id="loginForm" novalidate>
+        <div class="adm-err" id="errBox"></div>
+
+        <label class="field">
+          <span class="label">Email ID</span>
+          <input type="email" id="email" placeholder="4r@admin.com" autocomplete="username" required>
+        </label>
+
+        <label class="field">
+          <span class="label">Password</span>
+          <span class="pwd-wrap">
+            <input type="password" id="pass" placeholder="Apna password daalein" autocomplete="current-password" required>
+            <button type="button" class="pwd-eye" id="pwdEye" aria-label="Show password">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </span>
+        </label>
+
+        <button type="submit" class="btn btn--block"><span class="btn-text">Login</span></button>
+      </form>
+    </div>
+
+    <p class="adm-login-foot">Sirf admin email hi login kar sakti hai.</p>
+
+  </main>
+
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="js/auth.js"></script>
+  <script defer src="js/admin.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      "use strict";
+      var Auth = window.FourRAuth;
+      window.AdminPanel.initShell();
+
+      var form = document.getElementById("loginForm");
+      var errBox = document.getElementById("errBox");
+      var emailIn = document.getElementById("email");
+      var passIn = document.getElementById("pass");
+      var btn = form.querySelector('button[type="submit"]');
+
+      var next = (new URLSearchParams(window.location.search).get("next") || "index.html");
+
+      function showErr(msg) {
+        errBox.textContent = msg;
+        errBox.classList.add("is-show");
+      }
+
+      function clearErr() { errBox.classList.remove("is-show"); }
+
+      /* email rules wahi honi chahiye jo firestore.rules me hain */
+      emailIn.value = Auth.adminEmail();
+
+      /* pehle se login hai to seedha panel */
+      if (Auth.current()) { location.replace(next); }
+
+      /* page par error (sdk / next) */
+      var q = new URLSearchParams(window.location.search).get("err");
+      if (q === "sdk") showErr("Firebase load nahi hua. Internet check karein.");
+
+      /* password dikhaao / chhupao */
+      document.getElementById("pwdEye").addEventListener("click", function () {
+        var showing = passIn.type === "text";
+        passIn.type = showing ? "password" : "text";
+        this.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      });
+
+      emailIn.addEventListener("input", clearErr);
+      passIn.addEventListener("input", clearErr);
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        clearErr();
+
+        var mail = emailIn.value.trim();
+        var pass = passIn.value;
+
+        if (!mail)  { showErr("Email daalein."); emailIn.focus();  return; }
+        if (!pass)  { showErr("Password daalein."); passIn.focus();  return; }
+        if (pass.length < 6) { showErr("Password kam se kam 6 characters ka rakhein."); passIn.focus(); return; }
+
+        btn.classList.add("is-loading");
+
+        Auth.signIn(mail, pass)
+          .then(function (res) {
+            if (window.AdminPanel) window.AdminPanel.toast("Login Successful");
+            setTimeout(function () { location.replace(next); }, 500);
+          })
+          .catch(function (err) {
+            btn.classList.remove("is-loading");
+            showErr(err && err.message ? err.message : "Login nahi hua.");
+          });
+      });
+    });
+  </script>
+</body>
+</html>

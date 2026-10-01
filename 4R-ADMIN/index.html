@@ -28,6 +28,7 @@
           <a class="menu-item" href="index.html">Home</a>
           <a class="menu-item" href="settings.html">Settings</a>
           <a class="menu-item" href="../index.html">User Panel</a>
+          <a class="menu-item" href="#" id="logoutItem">Logout</a>
         </nav>
       </div>
 
@@ -83,9 +84,12 @@
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
   <script defer src="js/firebase-config.js"></script>
-  <script defer src="js/firebase-db.js"></script>  <script defer src="js/telegram.js"></script>
+  <script defer src="js/firebase-db.js"></script>
+  <script defer src="js/auth.js"></script>
+  <script defer src="js/telegram.js"></script>
   <script defer src="js/admin.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {

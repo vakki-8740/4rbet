@@ -1,68 +1,45 @@
 rules_version = '2';
 
 /* ==========================================================
-   4R BET  |  Firestore Security Rules
+   4R BET  |  Firestore Security Rules  (SECURE)
    Firebase Console > Firestore Database > Rules me paste karein
-   ==========================================================
-
-
    --------------------------------------------------------------
-   PART 1  --  ABHI KE LIYE (aapne kaha: sab open rahe)
-   -------------------------------------------------------------- */
+   Ab sirf admin (4r@admin.com) hi complaints dekh / badal / delete
+   kar sakta hai. Koi bhi user nayi complaint bhej sakta hai.
 
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    match /complaints/{complaintId} {
-
-      // nayi complaint bhej sakte ho
-      allow create: if true;
-
-      // padho, badlo, hatao
-      allow read, update, delete: if true;
-    }
-  }
-}
-
-
-/* ==========================================================
-   PART 2  --  JAB LOGIN LAGANA HO (secure version)
-   --------------------------------------------------------------
-   1) Firebase Console > Authentication > Sign-in method
-      me "Email/Password" ON karein.
-   2) Apna admin account bana lein (Authentication > Users).
-   3) Neeche wali rules paste karein aur apna email
-      NAJANE_SE_BADLE_RAKHEIN.
-
-   Ab sirf wahi admin account complaints dekh / badal sakta hai.
+   IMPORTANT : Neeche ADMIN_EMAIL change karna ho to sirf us
+   ek line ko badal dein - baaki rules same rahenge.
    ========================================================== */
 
-/*
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    /* Admin ka login email - isko hi rules me likha gaya hai */
+    function adminEmail() {
+      return "4r@admin.com";
+    }
+
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.token.email == adminEmail();
+    }
+
     match /complaints/{complaintId} {
 
-      function isAdmin() {
-        return request.auth != null
-            && request.auth.token.email == "ADMIN_EMAIL_YAHAN_PASTE_KARO";
-      }
-
-      // koi bhi complaint bhej sakta hai
+      /* Koi bhi user complaint bhej sakta hai (login ke bina) */
       allow create: if true;
 
-      // sirf admin padh sakta hai
+      /* Sirf admin padh sakta hai */
       allow read: if isAdmin();
 
-      // sirf admin status badal sakta hai
+      /* Sirf admin status badal sakta hai, aur sirf status field */
       allow update: if isAdmin()
-                    && request.resource.data.status is string;
+                    && request.resource.data.status is string
+                    && request.resource.data.diff(resource.data)
+                       .affectedKeys().hasOnly(['status', 'statusAt']);
 
-      // delete sirf admin
+      /* Sirf admin delete kar sakta hai */
       allow delete: if isAdmin();
     }
   }
 }
-
-*/

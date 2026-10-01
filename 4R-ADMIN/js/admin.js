@@ -58,6 +58,13 @@ window.AdminPanel = (function () {
      ========================================== */
 
   function initShell() {
+    /* ---------- login zaroori hai (content tab dikhe) ----------
+       login.html par guard nahi chalega (warna redirect loop) */
+    if (window.FourRAuth && document.body.getAttribute("data-noauth") !== "1") {
+      document.body.style.visibility = "hidden";
+      window.FourRAuth.requireLogin("index.html");
+    }
+
     var drop = document.getElementById("menuDrop");
     var btn  = document.getElementById("menuBtn");
 
@@ -79,10 +86,20 @@ window.AdminPanel = (function () {
         if (!drop.contains(e.target) && !btn.contains(e.target)) close();
       });
 
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") close();
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") close();
+    });
+
+    /* ---------- Logout ---------- */
+    var logout = document.getElementById("logoutItem");
+    if (logout) {
+      logout.addEventListener("click", function (e) {
+        e.preventDefault();
+        close();
+        if (window.confirm("Logout karein?")) signOut();
       });
     }
+  }
 
     document.querySelectorAll("#year, .year").forEach(function (el) {
       el.textContent = new Date().getFullYear();
@@ -97,6 +114,11 @@ window.AdminPanel = (function () {
     }, true);
 
     markActiveMenu();
+  }
+
+  function signOut() {
+    if (window.FourRAuth) return window.FourRAuth.signOut();
+    location.replace("login.html");
   }
 
   function markActiveMenu() {
@@ -535,6 +557,7 @@ window.AdminPanel = (function () {
     saveUI: saveUI,
     storageKB: storageKB,
     initShell: initShell,
+    signOut: signOut,
     markActiveMenu: markActiveMenu,
     load: load,
     findById: findById,

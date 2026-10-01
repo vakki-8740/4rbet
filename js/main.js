@@ -529,6 +529,15 @@
   if (DB) {
     DB.onSync(paintMailbox);
     DB.listComplaints().then(paintMailbox);
+
+    /* Cloud read sirf admin ke liye hai, user ko ye batana zaroori hai */
+    var cloudNote = document.getElementById("cloudNote");
+    if (cloudNote) {
+      window.setTimeout(function () {
+        var e = DB.lastError();
+        if (e && /permission|rules/i.test(e)) cloudNote.hidden = false;
+      }, 2500);
+    }
   }
 
   /* ==========================================
