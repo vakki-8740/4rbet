@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings &mdash; 4R-ADMIN</title>
-  <link rel="icon" type="image/jpeg" href="FAVICON/photo_2026-10-01_23-26-57.jpg">
+  <link rel="icon" type="image/jpeg" href="FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg">
+  <link rel="apple-touch-icon" href="ICONS/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0071f0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="4R-ADMIN">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -27,12 +34,16 @@
           <a class="menu-item" href="index.html">Home</a>
           <a class="menu-item" href="settings.html">Settings</a>
           <a class="menu-item" href="../index.html">User Panel</a>
+          <a class="menu-item" href="#" data-install style="display:none">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+            Install App
+          </a>
           <a class="menu-item" href="#" id="logoutItem">Logout</a>
         </nav>
       </div>
 
       <a class="logo" href="index.html">
-        <img class="logo-img adm-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+        <img class="logo-img adm-logo" src="FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
       </a>
 
     </div>
@@ -51,6 +62,26 @@
       <h1>Settings</h1>
       <p>Telegram alerts aur panel ki basic settings yahan se update karein.</p>
     </div>
+
+    <!-- ================= INSTALL APP ================= -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Install App</h2>
+        <span id="pwaState">CHECKING</span>
+      </div>
+
+      <div class="adm-hint">
+        Phone par app install karne se 4R-ADMIN apna hi icon khulta hai &mdash;
+        browser ka bar nahi dikhta, aur full screen me chalta hai.
+      </div>
+
+      <div class="adm-form">
+        <button type="button" class="btn btn--block" id="installBtn" data-install style="display:none">
+          Install App on Phone
+        </button>
+        <p class="adm-note" id="pwaNote" style="border:1px solid var(--line);border-radius:8px"></p>
+      </div>
+    </section>
 
     <!-- ================= FIREBASE ================= -->
     <section class="adm-box" style="margin-bottom:14px">
@@ -183,6 +214,7 @@
   <script defer src="js/firebase-config.js"></script>
   <script defer src="js/firebase-db.js"></script>
   <script defer src="js/auth.js"></script>
+  <script defer src="js/pwa.js"></script>
   <script defer src="js/telegram.js"></script>
   <script defer src="js/admin.js"></script>
   <script>
@@ -191,6 +223,58 @@
       var A = window.AdminPanel;
       var T = window.FourRTelegram;
       A.initShell();
+
+      /* ---------- PWA : install + auto login status ---------- */
+      var pwaState = document.getElementById("pwaState");
+      var pwaNote  = document.getElementById("pwaNote");
+      var installBtn = document.getElementById("installBtn");
+      var Pwa = window.FourRPwa;
+
+      function paintPwa() {
+        if (!Pwa) return;
+
+        var done = Pwa.installed();
+
+        if (done) {
+          pwaState.textContent = "INSTALLED";
+          pwaState.style.color = "#0f7a3d";
+          pwaNote.innerHTML = 'App phone par install ho chuka hai. ' +
+            'Ab ise app icon se kholein &mdash; login apne aap ho jayega.';
+          Pwa.showInstallButtons(false);
+          return;
+        }
+
+        if (Pwa.canInstall()) {
+          pwaState.textContent = "READY";
+          pwaState.style.color = "#0059bd";
+          pwaNote.innerHTML = 'Neeche <b>Install App on Phone</b> dabaein, ' +
+            'phir apne phone ka logo par <b>Install</b> / <b>Add</b> chunein.';
+        } else if (Pwa.isIOS()) {
+          pwaState.textContent = "MANUAL";
+          pwaState.style.color = "#9a5b00";
+          pwaNote.innerHTML = 'iPhone par: Chrome me <b>Share</b> button dabayein, ' +
+            'phir <b>Add to Home Screen</b> chunein.';
+        } else if (location.protocol === "file:") {
+          pwaState.textContent = "NEEDS HTTPS";
+          pwaState.style.color = "#b91c1c";
+          pwaNote.innerHTML = 'Install sirf <b>https://</b> ya live server par hota hai. ' +
+            'Project ko hosting par daalein (jaise GitHub Pages) phir kholein.';
+        } else {
+          pwaState.textContent = "NOT AVAILABLE";
+          pwaState.style.color = "#9a5b00";
+          pwaNote.innerHTML = 'Chrome ka menu (3 dot) kholein aur ' +
+            '<b>Install app</b> ya <b>Add to Home screen</b> chunein.';
+        }
+      }
+
+      if (Pwa) {
+        Pwa.init();
+        installBtn.addEventListener("click", function () {
+          Pwa.promptInstall().then(paintPwa);
+        });
+        paintPwa();
+        setTimeout(paintPwa, 2000);
+      }
 
       /* ---------- Firebase status ---------- */
       var fbState = document.getElementById("fbState");

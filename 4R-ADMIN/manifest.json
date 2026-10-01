@@ -1,0 +1,48 @@
+{
+  "name": "4R-ADMIN",
+  "short_name": "4R-ADMIN",
+  "description": "4R BET Admin Panel - complaints aur status update",
+  "id": "/4R-ADMIN/",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0071f0",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "ICONS/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "ICONS/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "ICONS/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "All Complaints",
+      "short_name": "Complaints",
+      "url": "index.html"
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "url": "settings.html"
+    }
+  ]
+}

@@ -99,6 +99,9 @@ window.AdminPanel = (function () {
         if (window.confirm("Logout karein?")) signOut();
       });
     }
+
+    /* ---------- PWA : install + service worker ---------- */
+    if (window.FourRPwa) window.FourRPwa.init();
   }
 
     document.querySelectorAll("#year, .year").forEach(function (el) {

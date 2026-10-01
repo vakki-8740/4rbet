@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4R-ADMIN</title>
-  <link rel="icon" type="image/jpeg" href="FAVICON/photo_2026-10-01_23-26-57.jpg">
+  <link rel="icon" type="image/jpeg" href="FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg">
+  <link rel="apple-touch-icon" href="ICONS/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0071f0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="4R-ADMIN">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -28,12 +35,16 @@
           <a class="menu-item" href="index.html">Home</a>
           <a class="menu-item" href="settings.html">Settings</a>
           <a class="menu-item" href="../index.html">User Panel</a>
+          <a class="menu-item" href="#" data-install style="display:none">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+            Install App
+          </a>
           <a class="menu-item" href="#" id="logoutItem">Logout</a>
         </nav>
       </div>
 
       <a class="logo" href="index.html">
-        <img class="logo-img adm-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+        <img class="logo-img adm-logo" src="FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
       </a>
 
     </div>
@@ -89,6 +100,7 @@
   <script defer src="js/firebase-config.js"></script>
   <script defer src="js/firebase-db.js"></script>
   <script defer src="js/auth.js"></script>
+  <script defer src="js/pwa.js"></script>
   <script defer src="js/telegram.js"></script>
   <script defer src="js/admin.js"></script>
   <script>

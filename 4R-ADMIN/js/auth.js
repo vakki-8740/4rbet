@@ -32,6 +32,25 @@ window.FourRAuth = (function () {
 
   function current() { return user; }
 
+  /* ==========================================
+     AUTO LOGIN
+     Session browser me hi save rehta hai, isliye
+     app band karke phir kholne par bhi login
+     reh jaata hai - dobara password nahi daalna padta.
+     ========================================== */
+  function keepSignedIn() {
+    var A = sdk();
+    if (!A) return Promise.resolve(false);
+
+    try {
+      return A.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL)
+        .then(function () { return true; })
+        .catch(function () { return false; });
+    } catch (e) {
+      return Promise.resolve(false);
+    }
+  }
+
   /* ---------- readable error ---------- */
   function friendly(code, msg) {
     switch (code) {
@@ -72,7 +91,10 @@ window.FourRAuth = (function () {
     var A = sdk();
     if (!A) return Promise.reject(new Error("Firebase Auth SDK load nahi hua"));
 
-    return A.signInWithEmailAndPassword(mail, pass)
+    /* login ke baad session browser me save rahe */
+    return keepSignedIn().then(function () {
+      return A.signInWithEmailAndPassword(mail, pass);
+    })
       .catch(function (err) {
         var code = err && err.code;
         var m = err && err.message ? " (" + err.message + ")" : "";
@@ -106,6 +128,9 @@ window.FourRAuth = (function () {
 
       var done = false;
 
+      /* purana session (agar hai) ko LOCAL me pakad lo */
+      keepSignedIn();
+
       A.onAuthStateChanged(function (u) {
         if (done) return;
 
@@ -133,6 +158,7 @@ window.FourRAuth = (function () {
   return {
     adminEmail: email,
     signIn: signIn,
+    keepSignedIn: keepSignedIn,
     requireLogin: requireLogin,
     signOut: signOut,
     current: current
