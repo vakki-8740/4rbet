@@ -117,9 +117,13 @@ window.AdminPanel = (function () {
 
   /* ==========================================
      STORE
+     Firestore = main, localStorage = offline cache
      ========================================== */
 
+  var DB = window.FourR;
+
   function load() {
+    if (DB) return DB.cacheRead();
     try {
       var raw = localStorage.getItem(STORE_KEY);
       return raw ? JSON.parse(raw) : [];
@@ -129,6 +133,7 @@ window.AdminPanel = (function () {
   }
 
   function persist(list) {
+    if (DB) return DB.cacheWrite(list);
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(list));
       return true;
@@ -143,25 +148,33 @@ window.AdminPanel = (function () {
     return null;
   }
 
-  function setStatus(id, status) {
-    if (!STATUS[status]) return false;
+  function setStatus(id, status, statusAt) {
+    if (!STATUS[status]) return Promise.resolve(false);
+
+    var at = statusAt || new Date().toISOString();
+
+    /* cache turant update (UI foran badle) */
     var list = load();
     var hit = false;
     list.forEach(function (r) {
       if (r.id === id) {
         r.status = status;
-        r.statusAt = new Date().toISOString();
+        r.statusAt = at;
         hit = true;
       }
     });
-    return hit ? persist(list) : false;
+    if (hit) persist(list);
+
+    if (!DB) return Promise.resolve(hit);
+    return DB.updateStatus(id, status, at).then(function (res) { return res.ok; });
   }
 
   function removeById(id) {
-    var list = load();
-    var next = list.filter(function (r) { return r.id !== id; });
-    if (next.length === list.length) return false;
-    return persist(next);
+    var list = load().filter(function (r) { return r.id !== id; });
+    persist(list);
+
+    if (!DB) return Promise.resolve(true);
+    return DB.deleteComplaint(id).then(function (res) { return res.ok; });
   }
 
   function statusOf(rec) {
@@ -506,6 +519,18 @@ window.AdminPanel = (function () {
     ICONS: ICONS,
     STATUS: STATUS,
     ICON: ICON,
+    DB: DB,
+    isCloud: function () { return !!DB && DB.isOnline(); },
+    cloudError: function () { return DB ? DB.lastError() : "Firebase SDK missing"; },
+    refresh: function () {
+      if (!DB) return Promise.resolve(load());
+      return DB.listComplaints();
+    },
+    subscribe: function (cb) {
+      if (!DB) return false;
+      DB.subscribe(cb);
+      return true;
+    },
     getUI: getUI,
     saveUI: saveUI,
     storageKB: storageKB,

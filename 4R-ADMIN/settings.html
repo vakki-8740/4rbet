@@ -51,6 +51,28 @@
       <p>Telegram alerts aur panel ki basic settings yahan se update karein.</p>
     </div>
 
+    <!-- ================= FIREBASE ================= -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Cloud Database</h2>
+        <span id="fbState">CHECKING</span>
+      </div>
+
+      <div class="adm-set-row">
+        <span class="adm-row-k">Firebase (Firestore)<small id="fbSub">Connect ho raha hai...</small></span>
+        <span class="adm-set-val" id="fbCount">0</span>
+      </div>
+
+      <div class="adm-form">
+        <button type="button" class="btn btn--ghost" id="syncBtn" style="width:100%">Sync Now</button>
+      </div>
+
+      <div class="adm-note" id="fbNote" style="border-top:1px solid var(--line)">
+        Complaint ab Firebase me save hoti hai, isliye admin panel kisi bhi device par
+        sabhi complaints dekh sakta hai. Internet na ho to data browser me hi rehta hai.
+      </div>
+    </section>
+
     <!-- ================= TELEGRAM ================= -->
     <section class="adm-box" style="margin-bottom:14px">
       <div class="adm-box-head">
@@ -152,14 +174,61 @@
     <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
   </footer>
 
-  <script src="js/telegram.js"></script>
-  <script src="js/admin.js"></script>
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="js/firebase-db.js"></script>  <script defer src="js/telegram.js"></script>
+  <script defer src="js/admin.js"></script>
   <script>
-    (function () {
+    document.addEventListener("DOMContentLoaded", function () {
       "use strict";
       var A = window.AdminPanel;
       var T = window.FourRTelegram;
       A.initShell();
+
+      /* ---------- Firebase status ---------- */
+      var fbState = document.getElementById("fbState");
+      var fbSub   = document.getElementById("fbSub");
+      var fbCount = document.getElementById("fbCount");
+      var syncBtn = document.getElementById("syncBtn");
+
+      function paintFirebase() {
+        var online = A.isCloud();
+        var err = A.cloudError();
+        var note = document.getElementById("fbNote");
+
+        if (err) {
+          fbState.textContent = "RULES ERROR";
+          fbState.style.color = "#b91c1c";
+          fbSub.textContent = err;
+          note.innerHTML = '<b style="color:#b91c1c">Cloud save nahi ho raha.</b><br>' +
+            'Project <b>rbet-6770a</b> ke liye rules publish nahi hui. ' +
+            'Firebase Console &gt; Firestore Database &gt; Rules me project ki ' +
+            '<b>firestore.rules</b> paste karke <b>Publish</b> dabayein. ' +
+            'Tab tak complaint browser me hi save hoti rahegi.';
+        } else {
+          fbState.textContent = online ? "ONLINE" : "OFFLINE";
+          fbState.style.color = online ? "#0f7a3d" : "#9a5b00";
+          fbSub.textContent = online
+            ? "Connected \u00b7 collection: " + (A.DB ? A.DB.COL : "complaints")
+            : "SDK load nahi hua (internet check karein)";
+        }
+
+        fbCount.textContent = A.load().length;
+      }
+
+      syncBtn.addEventListener("click", function () {
+        syncBtn.classList.add("is-loading");
+        A.refresh().then(function (list) {
+          var err = A.cloudError();
+          paintFirebase();
+          paintUI();
+          if (err) A.toast("Cloud error \u2014 rules check karein", true);
+          else A.toast("Sync Done \u00b7 " + list.length + " complaints");
+        });
+      });
 
       var tokenIn  = document.getElementById("botToken");
       var chatIn   = document.getElementById("chatId");
@@ -313,17 +382,32 @@
         reader.readAsText(f);
       });
 
-      /* ---------- Wipe ---------- */
+      /* ---------- Wipe (Firestore + cache dono) ---------- */
       document.getElementById("wipeBtn").addEventListener("click", function () {
-        if (!window.confirm("SAARI complaints permanently delete ho jayengi. Pakka?")) return;
-        localStorage.removeItem("4rbet_complaints");
-        paintUI();
-        A.toast("All Complaints Deleted");
+        if (!window.confirm("SAARI complaints permanently delete ho jayengi (Firestore + browser dono se). Pakka?")) return;
+
+        var go = function () {
+          paintUI();
+          paintFirebase();
+          A.toast("All Complaints Deleted");
+        };
+
+        if (A.DB) {
+          A.DB.deleteAll().then(function (res) { go(); });
+        } else {
+          localStorage.removeItem("4rbet_complaints");
+          go();
+        }
       });
 
       paintTelegram();
       paintUI();
-    })();
+      paintFirebase();
+
+      /* Firebase connect hote hi count update */
+      A.refresh().then(function () { paintFirebase(); paintUI(); });
+      window.addEventListener("4r-sync", function () { paintFirebase(); paintUI(); });
+    });
   </script>
 </body>
 </html>

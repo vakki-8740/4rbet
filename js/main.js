@@ -202,14 +202,12 @@
 
   var STORE_KEY = "4rbet_complaints";
 
-  var CATEGORY = {
-    depositForm: "Deposit Problem",
-    withdrawalForm: "Withdrawal Problem",
-    emailForm: "Email Verification",
-    identityForm: "Identity Verification"
-  };
+  /* Firebase upar se load hota hai; agar load nahi hua ya
+     rules allow nahi kar rahi to localStorage wala backup chalta hai. */
+  var DB = window.FourR;
 
-  function loadComplaints() {
+  function readStore() {
+    if (DB) return DB.cacheRead();
     try {
       var raw = localStorage.getItem(STORE_KEY);
       return raw ? JSON.parse(raw) : [];
@@ -218,8 +216,29 @@
     }
   }
 
+  function writeStore(list) {
+    if (DB) { DB.cacheWrite(list); return true; }
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var CATEGORY = {
+    depositForm: "Deposit Problem",
+    withdrawalForm: "Withdrawal Problem",
+    emailForm: "Email Verification",
+    identityForm: "Identity Verification"
+  };
+
+  function loadComplaints() {
+    return readStore();
+  }
+
   function persist(list) {
-    localStorage.setItem(STORE_KEY, JSON.stringify(list));
+    return writeStore(list);
   }
 
   /* Image ko thoda compress karke base64 me store karte hain taaki localStorage
@@ -299,26 +318,22 @@
   }
 
   function addComplaint(record) {
-    var list = loadComplaints();
-    list.unshift(record);
+    /* turant cache me daal do (offline bhi) */
+    var saved = persist([record].concat(
+      loadComplaints().filter(function (r) { return r.id !== record.id; })
+    ));
 
-    try {
-      persist(list);
-      return true;
-    } catch (e) {
-      // quota full -> images hata kar dubara try
-      var light = Object.assign({}, record, { images: [] });
-      var retry = [light].concat(list.slice(1).map(function (r) {
-        return r.images && r.images.length ? Object.assign({}, r, { images: [] }) : r;
-      }));
-
-      try {
-        persist(retry);
-        return true;
-      } catch (e2) {
-        return false;
-      }
+    /* Firestore me bhejo - fail ho to bhi complaint delete nahi hoga */
+    if (DB) {
+      DB.saveComplaint(record).then(function (res) {
+        if (res.ok && res.shrunk) {
+          console.info("Cloud storage ke liye image size thoda kam kiya gaya.");
+        }
+        if (!res.ok) console.warn("Firestore save nahi hua: " + res.error);
+      });
     }
+
+    return saved;
   }
 
   function formatDateTime(iso) {
@@ -368,8 +383,16 @@
   /* ---------- Mailbox render ---------- */
 
   var mailList = document.getElementById("mailList");
+  var renderMailbox = null;
+
+  function paintMailbox() {
+    if (!mailList) return;
+
+    if (renderMailbox) renderMailbox();
+  }
 
   if (mailList) {
+    renderMailbox = function () {
     var records = loadComplaints();
 
     /* Complaint ke 3 status - user panel aur admin panel dono me same */
@@ -497,7 +520,15 @@
           });
         });
       });
-    }
+    }   // else khatam
+
+    };  // renderMailbox function khatam
+  }     // if (mailList) khatam
+
+  /* ---------- Firestore se fresh data + live update ---------- */
+  if (DB) {
+    DB.onSync(paintMailbox);
+    DB.listComplaints().then(paintMailbox);
   }
 
   /* ==========================================

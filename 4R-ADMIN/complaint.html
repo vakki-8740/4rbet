@@ -94,18 +94,35 @@
     <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
   </footer>
 
-  <script src="js/telegram.js"></script>
-  <script src="js/admin.js"></script>
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="js/firebase-db.js"></script>
+  <script defer src="js/telegram.js"></script>
+  <script defer src="js/admin.js"></script>
   <script>
-    (function () {
+    document.addEventListener("DOMContentLoaded", function () {
       "use strict";
       var A = window.AdminPanel;
       A.initShell();
 
       var id  = (new URLSearchParams(window.location.search).get("id") || "").trim();
-      var rec = id ? A.findById(id) : null;
 
-      if (!rec) {
+      if (!id) { missing(); return; }
+
+      var rec = A.findById(id);
+      if (rec) draw(rec);
+      else missing();
+
+      /* Server se fresh record (dusre device par status badla ho to) */
+      A.refresh().then(function (list) {
+        var fresh = list.filter(function (r) { return r.id === id; })[0];
+        if (fresh) draw(fresh);
+      });
+
+      function missing() {
         document.querySelector(".adm").innerHTML =
           '<div class="adm-empty" style="border:1px dashed #d1d5db;border-radius:14px;background:#f6f8fb">' +
             '<div class="adm-empty-ico">' + A.ICON.warn + '</div>' +
@@ -113,11 +130,20 @@
             '<p>Ye complaint delete ho chuki hai ya link galat hai.</p>' +
             '<a class="btn" href="index.html">Back to Home</a>' +
           '</div>';
-        return;
       }
 
-      var d = rec.data || {};
       var statusEl = document.getElementById("dStatus");
+
+      function paintStatus() {
+        if (!rec) return;
+        var st = A.statusOf(rec);
+        statusEl.className = "adm-status adm-status--" + st;
+        statusEl.textContent = A.STATUS[st];
+      }
+
+      function draw(record) {
+      rec = record;
+      var d = rec.data || {};
 
       /* ---------- header ---------- */
       document.getElementById("dName").textContent = d.userName || "Unknown User";
@@ -125,28 +151,7 @@
         A.formatDateTime(rec.submittedAt) + " \u00b7 " + (rec.id || "");
       document.getElementById("dCat").textContent = rec.category || "Complaint";
 
-      function paintStatus() {
-        var st = A.statusOf(rec);
-        statusEl.className = "adm-status adm-status--" + st;
-        statusEl.textContent = A.STATUS[st];
-      }
       paintStatus();
-
-      /* ---------- Status Update : button -> popup ---------- */
-      document.getElementById("statusBtn").addEventListener("click", function () {
-        A.statusPopup({
-          current: A.statusOf(rec),
-          onUpdate: function (next) {
-            if (A.setStatus(rec.id, next)) {
-              rec.status = next;
-              paintStatus();
-              A.toast("Update Successful");
-            } else {
-              A.toast("Update nahi hua \u2014 storage full hai", true);
-            }
-          }
-        });
-      });
 
       /* ---------- all form data ---------- */
       document.getElementById("dRows").innerHTML = A.rowsHtml(rec);
@@ -183,14 +188,37 @@
           });
         });
       }
+      }
 
-      /* ---------- delete ---------- */
-      document.getElementById("delBtn").addEventListener("click", function () {
-        if (!window.confirm("Ye complaint permanently delete karein?")) return;
-        if (A.removeById(rec.id)) window.location.href = "index.html";
-        else A.toast("Delete nahi hua \u2014 storage full hai", true);
+      /* ---------- buttons : ek hi baar listener lagao ---------- */
+
+      document.getElementById("statusBtn").addEventListener("click", function () {
+        if (!rec) return;
+        A.statusPopup({
+          current: A.statusOf(rec),
+          onUpdate: function (next) {
+            A.setStatus(rec.id, next).then(function (ok) {
+              if (ok) {
+                rec.status = next;
+                paintStatus();
+                A.toast("Update Successful");
+              } else {
+                A.toast("Update nahi hua \u2014 " + (A.cloudError() || "storage full"), true);
+              }
+            });
+          }
+        });
       });
-    })();
+
+      document.getElementById("delBtn").addEventListener("click", function () {
+        if (!rec) return;
+        if (!window.confirm("Ye complaint permanently delete karein?")) return;
+        A.removeById(rec.id).then(function (ok) {
+          if (ok) window.location.href = "index.html";
+          else A.toast("Delete nahi hua \u2014 " + (A.cloudError() || "storage full"), true);
+        });
+      });
+    });
   </script>
 </body>
 </html>

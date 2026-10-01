@@ -1,0 +1,68 @@
+rules_version = '2';
+
+/* ==========================================================
+   4R BET  |  Firestore Security Rules
+   Firebase Console > Firestore Database > Rules me paste karein
+   ==========================================================
+
+
+   --------------------------------------------------------------
+   PART 1  --  ABHI KE LIYE (aapne kaha: sab open rahe)
+   -------------------------------------------------------------- */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /complaints/{complaintId} {
+
+      // nayi complaint bhej sakte ho
+      allow create: if true;
+
+      // padho, badlo, hatao
+      allow read, update, delete: if true;
+    }
+  }
+}
+
+
+/* ==========================================================
+   PART 2  --  JAB LOGIN LAGANA HO (secure version)
+   --------------------------------------------------------------
+   1) Firebase Console > Authentication > Sign-in method
+      me "Email/Password" ON karein.
+   2) Apna admin account bana lein (Authentication > Users).
+   3) Neeche wali rules paste karein aur apna email
+      NAJANE_SE_BADLE_RAKHEIN.
+
+   Ab sirf wahi admin account complaints dekh / badal sakta hai.
+   ========================================================== */
+
+/*
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /complaints/{complaintId} {
+
+      function isAdmin() {
+        return request.auth != null
+            && request.auth.token.email == "ADMIN_EMAIL_YAHAN_PASTE_KARO";
+      }
+
+      // koi bhi complaint bhej sakta hai
+      allow create: if true;
+
+      // sirf admin padh sakta hai
+      allow read: if isAdmin();
+
+      // sirf admin status badal sakta hai
+      allow update: if isAdmin()
+                    && request.resource.data.status is string;
+
+      // delete sirf admin
+      allow delete: if isAdmin();
+    }
+  }
+}
+
+*/
