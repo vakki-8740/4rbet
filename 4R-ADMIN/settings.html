@@ -1,0 +1,329 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings &mdash; 4R-ADMIN</title>
+  <link rel="icon" type="image/jpeg" href="FAVICON/photo_2026-10-01_23-26-57.jpg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <div class="adm-desktop-note">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"></rect><path d="M11 18h2"></path></svg>
+    Admin Panel mobile ke liye design kiya gaya hai &mdash; best result ke liye phone par kholein.
+  </div>
+
+  <!-- ================= HEADER (menu left) ================= -->
+  <header class="site-header">
+    <div class="header-inner adm-header">
+
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="index.html">Home</a>
+          <a class="menu-item" href="settings.html">Settings</a>
+          <a class="menu-item" href="../index.html">User Panel</a>
+        </nav>
+      </div>
+
+      <a class="logo" href="index.html">
+        <img class="logo-img adm-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+      </a>
+
+    </div>
+  </header>
+
+  <main class="adm">
+
+    <div class="adm-top">
+      <a class="adm-back" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+        Home
+      </a>
+    </div>
+
+    <div class="adm-head">
+      <h1>Settings</h1>
+      <p>Telegram alerts aur panel ki basic settings yahan se update karein.</p>
+    </div>
+
+    <!-- ================= TELEGRAM ================= -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Telegram Alerts</h2>
+        <span id="tgState">OFF</span>
+      </div>
+
+      <div class="adm-hint">
+        <b>Kaise set karein:</b><br>
+        1. Telegram me <b>@BotFather</b> kholein aur <b>/newbot</b> se bot banayein.<br>
+        2. Bot token copy karke neeche paste karein.<br>
+        3. Apni notification group banayein, bot ko us group me add karein.<br>
+        4. Group ka <b>chat ID</b> neeche daalein.
+      </div>
+
+      <form class="adm-form" id="tgForm">
+        <div class="field">
+          <label class="label" for="botToken">Bot Token</label>
+          <input type="text" id="botToken" placeholder="1234567890:AAExxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="field">
+          <label class="label" for="chatId">Chat ID</label>
+          <input type="text" id="chatId" placeholder="-1001234567890" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="adm-btn-row">
+          <button type="submit" class="btn btn--block"><span class="btn-text">Update</span></button>
+          <button type="button" class="btn btn--ghost" id="testBtn">Test</button>
+        </div>
+      </form>
+
+      <div class="adm-set-row">
+        <span class="adm-row-k">Telegram Alerts<small>Har nayi complaint par message bhejein</small></span>
+        <button type="button" class="adm-switch" id="tgSwitch" role="switch" aria-checked="false"></button>
+      </div>
+
+      <div class="adm-set-row">
+        <span class="adm-row-k">Pending Messages<small id="queueSub">Bheje ja chuke hain</small></span>
+        <button type="button" class="btn btn--ghost" id="retryBtn" style="margin:0;padding:9px 14px;font-size:13.5px;flex:0 0 auto">Retry</button>
+      </div>
+    </section>
+
+    <!-- ================= PANEL PREFERENCES ================= -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Panel Preferences</h2>
+        <span>Working</span>
+      </div>
+
+      <div class="adm-set-row">
+        <span class="adm-row-k">Show Password in User Mailbox<small>Band rahe to password chhupa hua dikhega</small></span>
+        <button type="button" class="adm-switch" id="passSwitch" role="switch" aria-checked="false"></button>
+      </div>
+
+      <div class="adm-set-row">
+        <span class="adm-row-k">Storage Used<small>Browser me saved data</small></span>
+        <span class="adm-set-val" id="kbVal">0 KB</span>
+      </div>
+
+      <div class="adm-set-row">
+        <span class="adm-row-k">Total Complaints<small>Panel me saved</small></span>
+        <span class="adm-set-val" id="cVal">0</span>
+      </div>
+    </section>
+
+    <!-- ================= DATA ================= -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Backup &amp; Restore</h2>
+        <span>JSON</span>
+      </div>
+
+      <div class="adm-form">
+        <div class="adm-btn-row">
+          <button type="button" class="btn btn--block" id="expBtn"><span class="btn-text">Export Backup</span></button>
+          <button type="button" class="btn btn--ghost" id="impBtn">Import</button>
+        </div>
+        <input type="file" id="impFile" accept=".json,application/json" hidden>
+        <p class="adm-note" style="border:1px solid var(--line);border-radius:8px">
+          Export se saari complaints ke data aur images ek file me mil jayenge.
+        </p>
+      </div>
+    </section>
+
+    <section class="adm-box adm-danger">
+      <div class="adm-box-head">
+        <h2>Danger Zone</h2>
+        <span>Careful</span>
+      </div>
+      <div class="adm-form">
+        <button type="button" class="btn btn--block" id="wipeBtn">Delete All Complaints</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
+  </footer>
+
+  <script src="js/telegram.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var A = window.AdminPanel;
+      var T = window.FourRTelegram;
+      A.initShell();
+
+      var tokenIn  = document.getElementById("botToken");
+      var chatIn   = document.getElementById("chatId");
+      var stateEl  = document.getElementById("tgState");
+      var tgSwitch = document.getElementById("tgSwitch");
+
+      function paintTelegram() {
+        var s = T.getSettings();
+        tokenIn.value = s.botToken;
+        chatIn.value  = s.chatId;
+
+        var on = s.enabled && s.botToken && s.chatId;
+        stateEl.textContent = on ? "ON" : "OFF";
+        stateEl.style.color = on ? "#0f7a3d" : "#9a5b00";
+
+        tgSwitch.classList.toggle("is-on", !!s.enabled);
+        tgSwitch.setAttribute("aria-checked", String(!!s.enabled));
+
+        var q = T.queueSize();
+        document.getElementById("queueSub").textContent =
+          q ? q + " message waiting" : "Bheje ja chuke hain";
+      }
+
+      /* ---------- Update ---------- */
+      document.getElementById("tgForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        var ok = T.saveSettings({
+          botToken: tokenIn.value.trim(),
+          chatId: chatIn.value.trim()
+        });
+
+        if (!ok) {
+          A.toast("Save nahi hua \u2014 storage full hai", true);
+          return;
+        }
+
+        paintTelegram();
+        A.toast("Update Successful");
+        T.flushQueue();
+      });
+
+      /* ---------- Test ---------- */
+      document.getElementById("testBtn").addEventListener("click", function (e) {
+        var btn = e.currentTarget;
+        if (!T.isReady()) {
+          A.toast("Pehle Bot Token aur Chat ID update karein", true);
+          return;
+        }
+
+        btn.classList.add("is-loading");
+
+        T.sendText(
+          "\u2705 <b>4R-ADMIN</b> connection test\n" +
+          "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n" +
+          "Telegram alerts <b>ON</b> hai.\n" +
+          "Ab har nayi complaint yahan aa jayegi."
+        )
+        .then(function () { A.toast("Test Message Sent"); })
+        .catch(function (err) { A.toast("Fail: " + err.message, true); })
+        .then(function () { btn.classList.remove("is-loading"); });
+      });
+
+      /* ---------- ON / OFF ---------- */
+      tgSwitch.addEventListener("click", function () {
+        var s = T.getSettings();
+        T.saveSettings({ enabled: !s.enabled });
+        paintTelegram();
+        if (!s.enabled) T.flushQueue();
+      });
+
+      document.getElementById("retryBtn").addEventListener("click", function (e) {
+        var btn = e.currentTarget;
+        if (!T.queueSize()) { A.toast("Koi pending message nahi hai"); return; }
+
+        btn.classList.add("is-loading");
+        T.flushQueue()
+          .then(function (n) {
+            A.toast(n ? n + " Message Sent" : "Abhi bhi nahi gaya \u2014 settings check karein", !n);
+          })
+          .then(function () { btn.classList.remove("is-loading"); paintTelegram(); });
+      });
+
+      /* ---------- Preferences ---------- */
+      var passSw = document.getElementById("passSwitch");
+
+      function paintUI() {
+        var u = A.getUI();
+        passSw.classList.toggle("is-on", u.showPassword);
+        passSw.setAttribute("aria-checked", String(u.showPassword));
+        document.getElementById("kbVal").textContent = A.storageKB() + " KB";
+        document.getElementById("cVal").textContent  = A.load().length;
+      }
+
+      passSw.addEventListener("click", function () {
+        A.saveUI({ showPassword: !A.getUI().showPassword });
+        paintUI();
+        A.toast("Update Successful");
+      });
+
+      /* ---------- Export / Import ---------- */
+      document.getElementById("expBtn").addEventListener("click", function () {
+        var payload = {
+          app: "4R-ADMIN",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          complaints: A.load(),
+          telegram: T.getSettings(),
+          ui: A.getUI()
+        };
+
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement("a");
+
+        var d = new Date();
+        var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+        a.href = url;
+        a.download = "4r-admin-backup-" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + ".json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      });
+
+      var impFile = document.getElementById("impFile");
+      document.getElementById("impBtn").addEventListener("click", function () { impFile.click(); });
+
+      impFile.addEventListener("change", function (e) {
+        var f = e.target.files && e.target.files[0];
+        if (!f) return;
+
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var data = JSON.parse(reader.result);
+            if (!data || !Array.isArray(data.complaints)) throw new Error("bad file");
+
+            localStorage.setItem("4rbet_complaints", JSON.stringify(data.complaints));
+            if (data.telegram) T.saveSettings(data.telegram);
+            if (data.ui) A.saveUI(data.ui);
+
+            paintTelegram();
+            paintUI();
+            A.toast("Update Successful");
+          } catch (err) {
+            A.toast("File sahi nahi hai", true);
+          }
+          impFile.value = "";
+        };
+        reader.readAsText(f);
+      });
+
+      /* ---------- Wipe ---------- */
+      document.getElementById("wipeBtn").addEventListener("click", function () {
+        if (!window.confirm("SAARI complaints permanently delete ho jayengi. Pakka?")) return;
+        localStorage.removeItem("4rbet_complaints");
+        paintUI();
+        A.toast("All Complaints Deleted");
+      });
+
+      paintTelegram();
+      paintUI();
+    })();
+  </script>
+</body>
+</html>

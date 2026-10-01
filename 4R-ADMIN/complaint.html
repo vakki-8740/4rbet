@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaint &mdash; 4R-ADMIN</title>
+  <link rel="icon" type="image/jpeg" href="FAVICON/photo_2026-10-01_23-26-57.jpg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <div class="adm-desktop-note">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"></rect><path d="M11 18h2"></path></svg>
+    Admin Panel mobile ke liye design kiya gaya hai &mdash; best result ke liye phone par kholein.
+  </div>
+
+  <!-- ================= HEADER (menu left) ================= -->
+  <header class="site-header">
+    <div class="header-inner adm-header">
+
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="index.html">Home</a>
+          <a class="menu-item" href="settings.html">Settings</a>
+          <a class="menu-item" href="../index.html">User Panel</a>
+        </nav>
+      </div>
+
+      <a class="logo" href="index.html">
+        <img class="logo-img adm-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+      </a>
+
+    </div>
+  </header>
+
+  <main class="adm">
+
+    <div class="adm-top">
+      <a class="adm-back" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+        Home
+      </a>
+    </div>
+
+    <!-- ---------- USER HEADER ---------- -->
+    <section class="adm-detail-head">
+      <span class="adm-detail-ava"><img src="USER-ICON/2288510.png" alt="" data-ua></span>
+      <div class="adm-detail-who">
+        <h1 id="dName">&mdash;</h1>
+        <p id="dMeta">&mdash;</p>
+      </div>
+      <span class="adm-status adm-status--pending" id="dStatus">Pending</span>
+    </section>
+
+    <!-- ---------- STATUS UPDATE (popup se) ---------- -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Status</h2>
+        <span>User panel me bhi dikhega</span>
+      </div>
+      <div class="adm-statusbtn-wrap">
+        <button type="button" class="btn adm-status-btn" id="statusBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+          Status Update
+        </button>
+      </div>
+    </section>
+
+    <!-- ---------- ALL FORM DATA + ACTION BUTTONS ---------- -->
+    <section class="adm-box" style="margin-bottom:14px">
+      <div class="adm-box-head">
+        <h2>Complaint Details</h2>
+        <span id="dCat">&mdash;</span>
+      </div>
+      <div class="adm-rows" id="dRows"></div>
+      <div class="adm-acts" id="dActs"></div>
+    </section>
+
+    <!-- ---------- DELETE ---------- -->
+    <section class="adm-box adm-danger">
+      <div class="adm-note">Complaint delete karne se wo user ke mailbox se bhi hat jayegi.</div>
+      <div class="adm-form">
+        <button type="button" class="btn btn--block" id="delBtn">Delete This Complaint</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
+  </footer>
+
+  <script src="js/telegram.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var A = window.AdminPanel;
+      A.initShell();
+
+      var id  = (new URLSearchParams(window.location.search).get("id") || "").trim();
+      var rec = id ? A.findById(id) : null;
+
+      if (!rec) {
+        document.querySelector(".adm").innerHTML =
+          '<div class="adm-empty" style="border:1px dashed #d1d5db;border-radius:14px;background:#f6f8fb">' +
+            '<div class="adm-empty-ico">' + A.ICON.warn + '</div>' +
+            '<h3>Complaint nahi mili</h3>' +
+            '<p>Ye complaint delete ho chuki hai ya link galat hai.</p>' +
+            '<a class="btn" href="index.html">Back to Home</a>' +
+          '</div>';
+        return;
+      }
+
+      var d = rec.data || {};
+      var statusEl = document.getElementById("dStatus");
+
+      /* ---------- header ---------- */
+      document.getElementById("dName").textContent = d.userName || "Unknown User";
+      document.getElementById("dMeta").textContent =
+        A.formatDateTime(rec.submittedAt) + " \u00b7 " + (rec.id || "");
+      document.getElementById("dCat").textContent = rec.category || "Complaint";
+
+      function paintStatus() {
+        var st = A.statusOf(rec);
+        statusEl.className = "adm-status adm-status--" + st;
+        statusEl.textContent = A.STATUS[st];
+      }
+      paintStatus();
+
+      /* ---------- Status Update : button -> popup ---------- */
+      document.getElementById("statusBtn").addEventListener("click", function () {
+        A.statusPopup({
+          current: A.statusOf(rec),
+          onUpdate: function (next) {
+            if (A.setStatus(rec.id, next)) {
+              rec.status = next;
+              paintStatus();
+              A.toast("Update Successful");
+            } else {
+              A.toast("Update nahi hua \u2014 storage full hai", true);
+            }
+          }
+        });
+      });
+
+      /* ---------- all form data ---------- */
+      document.getElementById("dRows").innerHTML = A.rowsHtml(rec);
+
+      /* ---------- action buttons : Show Password + Image 1..n (ek row) ---------- */
+      var imgs  = (rec.images || []).filter(function (im) { return im && im.dataUrl; });
+      var acts  = document.getElementById("dActs");
+      var actsHtml = A.actsHtml(rec);
+
+      if (!actsHtml) {
+        acts.innerHTML = '<p class="adm-none">Is complaint me password aur image kuch nahi hai.</p>';
+      } else {
+        acts.innerHTML = actsHtml;
+
+        var pw = document.querySelector("#dRows [data-secret]");
+        var reveal = acts.querySelector("[data-reveal]");
+        var revealText = acts.querySelector("[data-reveal-text]");
+        var tight = imgs.length >= 2;
+
+        if (reveal && pw) {
+          reveal.addEventListener("click", function () {
+            var hidden = pw.textContent.indexOf("\u2022") === 0;
+            pw.textContent = hidden ? String(d.password || "")
+                                   : "\u2022".repeat(String(d.password || "").length);
+            if (tight) revealText.textContent = hidden ? "Hide" : "Password";
+            else revealText.textContent = hidden ? "Hide Password" : "Show Password";
+          });
+        }
+
+        acts.querySelectorAll("[data-img]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var im = imgs[Number(b.getAttribute("data-img"))];
+            if (im && im.dataUrl) A.openViewer(im.dataUrl, im.name);
+          });
+        });
+      }
+
+      /* ---------- delete ---------- */
+      document.getElementById("delBtn").addEventListener("click", function () {
+        if (!window.confirm("Ye complaint permanently delete karein?")) return;
+        if (A.removeById(rec.id)) window.location.href = "index.html";
+        else A.toast("Delete nahi hua \u2014 storage full hai", true);
+      });
+    })();
+  </script>
+</body>
+</html>

