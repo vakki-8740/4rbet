@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Chat page full-screen app shell hai:
+       page scroll/zoom band, sirf chat list scroll karegi -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Online Chat &mdash; 4R BET</title>
   <link rel="icon" type="image/jpeg" href="favicon/photo_2026-10-01_23-48-05.jpg">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="chat-page">
 
   <!-- ================= OPENING ANIMATION ================= -->
   <div class="splash" id="splash" aria-hidden="true">
     <img class="splash-logo" src="LOGO/images%20(2).png" alt="">
   </div>
+
+  <!-- ================= HEADER ================= -->
   <header class="site-header">
     <div class="header-inner">
+
       <a class="logo" href="index.html">
         <img class="logo-img" src="LOGO/images%20(2).png" alt="4R BET">
       </a>
@@ -29,75 +34,138 @@
           <a class="menu-item" href="4R-ADMIN/index.html">Admin Panel</a>
         </nav>
       </div>
+
     </div>
   </header>
 
-  <main class="page">
-    <div class="page-top">
-      <a class="btn btn--ghost btn--back" href="index.html">&larr; Back to Home</a>
-    </div>
-    <div class="page-head">
-      <h1 class="page-title">Online Chat</h1>
-    </div>
+  <!-- ================= CHAT SHELL ================= -->
+  <main class="chat-main">
 
-    <div class="panel">
-      <div class="chat-box">
-        <div class="chat-messages" id="chatMessages">
-          <div class="msg msg--agent">
-            <span class="msg-name">4RABET HELP CENTER</span>
-            <p><strong>ðŸ‘‹ Welcome to 4RABET HELP CENTER</strong></p>
-            <p>Hello! ðŸ‘‹<br>How can we help you today?</p>
-            <p>Please select a topic below or type your question, and our support team will assist you.</p>
-            <p>ðŸ’¬ You can ask about:<br>
-              â€¢ Account &amp; Login<br>
-              â€¢ Deposit<br>
-              â€¢ Withdrawal<br>
-              â€¢ Verification<br>
-              â€¢ Technical Issues<br>
-              â€¢ Other Help</p>
-            <p>â±ï¸ Please allow some time for our team to respond.</p>
-            <p><strong>4RABET HELP CENTER</strong><br>We're here to help.</p>
-          </div>
-        </div>
-
-        <div class="chat-actions">
-          <button type="button" class="chat-act" id="btnImage" title="Send image">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
-              <circle cx="8.5" cy="9.5" r="1.6"></circle>
-              <path d="M21 16l-5-5-6.5 6.5"></path>
-            </svg>
-            <span>Image</span>
-          </button>
-          <button type="button" class="chat-act" id="btnFile" title="Send file or PDF">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2.5H7.5A2.5 2.5 0 0 0 5 5v14a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 19V7.5L14 2.5Z"></path>
-              <path d="M14 2.5V7a.5.5 0 0 0 .5.5H19"></path>
-            </svg>
-            <span>File / PDF</span>
-          </button>
-          <input type="file" id="imageInput" accept="image/*" hidden>
-          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" hidden>
-        </div>
-
-        <form class="chat-input" id="chatForm">
-          <input type="text" id="chatField" placeholder="Apna message likhiye..." autocomplete="off" required>
-          <button type="submit" class="btn btn--send">Send</button>
-        </form>
+    <!-- ---------- CHAT TITLE BAR ---------- -->
+    <div class="chat-bar">
+      <span class="chat-bar-ava">4R</span>
+      <div class="chat-bar-who">
+        <strong>4RABET HELP CENTER</strong>
+        <span class="chat-bar-state"><i></i> Online &middot; Reply in minutes</span>
       </div>
     </div>
+
+    <!-- ---------- MESSAGES (sirf yahi scroll hoga) ---------- -->
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg msg--agent msg--welcome">
+        <span class="msg-name">4RABET HELP CENTER</span>
+        <p><strong>👋 Welcome to 4RABET HELP CENTER</strong></p>
+        <p>Hello! 👋<br>How can we help you today?</p>
+        <p>Please select a topic below or type your question, and our support team will assist you.</p>
+        <p>💬 You can ask about:<br>
+          • Account &amp; Login<br>
+          • Deposit<br>
+          • Withdrawal<br>
+          • Verification<br>
+          • Technical Issues<br>
+          • Other Help</p>
+        <p>⏱️ Please allow some time for our team to respond.</p>
+        <p><strong>4RABET HELP CENTER</strong><br>We're here to help.</p>
+      </div>
+    </div>
+
+    <!-- ---------- jump to latest ---------- -->
+    <button type="button" class="chat-latest" id="btnLatest" aria-label="Latest messages">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>
+    </button>
+
+    <!-- ---------- ATTACHMENTS ---------- -->
+    <div class="chat-actions">
+      <button type="button" class="chat-act" id="btnImage" title="Send image">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+          <circle cx="8.5" cy="9.5" r="1.6"></circle>
+          <path d="M21 16l-5-5-6.5 6.5"></path>
+        </svg>
+        <span>Image</span>
+      </button>
+      <button type="button" class="chat-act" id="btnFile" title="Send file or PDF">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2.5H7.5A2.5 2.5 0 0 0 5 5v14a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 19V7.5L14 2.5Z"></path>
+          <path d="M14 2.5V7a.5.5 0 0 0 .5.5H19"></path>
+        </svg>
+        <span>File / PDF</span>
+      </button>
+      <input type="file" id="imageInput" accept="image/*" hidden>
+      <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" hidden>
+    </div>
+
+    <!-- ---------- INPUT BAR (hamesha niche dikhta rahe) ---------- -->
+    <form class="chat-input" id="chatForm">
+      <input type="text" id="chatField" placeholder="Apna message likhiye..." autocomplete="off" required>
+      <button type="submit" class="btn btn--send">Send</button>
+    </form>
+
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer chat-foot">
     <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
   </footer>
 
-  <!-- Firebase SDK -->
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-  <script defer src="js/firebase-config.js"></script>
-  <script defer src="js/firebase-db.js"></script>  <script defer src="js/telegram.js"></script>
+  <script defer src="js/telegram.js"></script>
   <script defer src="js/main.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var box    = document.getElementById("chatMessages");
+      var latest = document.getElementById("btnLatest");
+
+      /* user ki "scroll kiya hai" ya nahi - yahi decide karta hai
+         ki naya message aate hi neeche kheenchein ya nahi */
+      var stick = true;
+
+      function atBottom() {
+        return box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+      }
+
+      function toBottom(smooth) {
+        try {
+          box.scrollTo({ top: box.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+        } catch (e) {
+          box.scrollTop = box.scrollHeight;
+        }
+      }
+
+      function paintLatest() {
+        latest.classList.toggle("is-show", !atBottom());
+      }
+
+      box.addEventListener("scroll", function () {
+        stick = atBottom();
+        paintLatest();
+      }, { passive: true });
+
+      var ro = new MutationObserver(function () {
+        if (stick) toBottom(true);
+        paintLatest();
+      });
+      ro.observe(box, { childList: true, subtree: true });
+
+      setTimeout(function () { toBottom(); stick = true; paintLatest(); }, 2400);
+
+      latest.addEventListener("click", function () {
+        toBottom(true);
+        stick = true;
+        paintLatest();
+      });
+
+      /* keyboard khulne par chat neeche chipke */
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", function () {
+          setTimeout(function () { if (stick) toBottom(); paintLatest(); }, 80);
+        });
+      }
+
+      /* double tap / pinch zoom band (sirf is page par) */
+      document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+      document.addEventListener("dblclick", function (e) { e.preventDefault(); }, { passive: false });
+    })();
+  </script>
 </body>
 </html>

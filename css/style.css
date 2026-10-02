@@ -424,6 +424,234 @@ img { max-width: 100%; display: block; }
 /* ---------- Uploaded: green state ---------- */
 
 /* ==========================================
+   CHAT PAGE : FULL SCREEN APP SHELL
+   Mobile par poori screen cover karta hai.
+   Page scroll + pinch zoom band rahega,
+   sirf message list scroll hogi.
+   ========================================== */
+
+.chat-page {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-soft);
+}
+
+/* header fix nahi - flex me apni jagah */
+.chat-page .site-header { position: static; flex: 0 0 auto; }
+
+/* footer chipak kar jagah kheech leta hai, mobile par chhupa */
+.chat-page .chat-foot {
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  font-size: 11px;
+  background: var(--bg-soft);
+}
+
+@media (max-width: 620px) {
+  .chat-page .chat-foot { display: none; }
+}
+
+/* ---------- shell column ---------- */
+
+.chat-main {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-soft);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+@media (max-width: 620px) {
+  .chat-main { border-left: none; border-right: none; }
+}
+
+/* ---------- chat title bar ---------- */
+
+.chat-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+.chat-bar-ava {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.chat-bar-who { min-width: 0; }
+
+.chat-bar-who strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-bar-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.chat-bar-state i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #12a150;
+  box-shadow: 0 0 0 3px rgba(18, 161, 80, .18);
+}
+
+/* ---------- messages : sirf ye scroll hoti hai ---------- */
+
+.chat-page .chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  padding: 16px 14px 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  background: var(--bg-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- jump to latest ---------- */
+
+.chat-latest {
+  position: absolute;
+  right: 14px;
+  bottom: 128px;
+  z-index: 20;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--blue);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity .18s, transform .18s;
+}
+
+.chat-latest.is-show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+/* ---------- action + input bar ---------- */
+
+.chat-page .chat-actions {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+}
+
+.chat-page .chat-input {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  /* iPhone ka home / gesture bar na chhuye */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: #ffffff;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+}
+
+.chat-page .chat-input input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 16px se kam font iOS par page zoom karwa deta hai */
+  font-size: 16px;
+  padding: 11px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: var(--bg-soft);
+}
+
+.chat-page .chat-input input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 113, 240, .12);
+}
+
+.chat-page .btn--send { border-radius: 999px; padding: 11px 22px; }
+
+/* ---------- bubbles ---------- */
+
+.chat-page .msg {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 16px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.chat-page .msg--agent {
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 6px;
+}
+
+.chat-page .msg--user {
+  align-self: flex-end;
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+  border-bottom-right-radius: 6px;
+}
+
+.chat-page .msg--welcome { max-width: 100%; }
+
+@media (max-width: 620px) {
+  .chat-page .msg { max-width: 88%; }
+}
+
+/* ==========================================
    CHAT EXTRA FEATURES
    ========================================== */
 
