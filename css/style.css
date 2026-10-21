@@ -1483,3 +1483,29 @@ body.is-splash { overflow: hidden; }
   .card-title { font-size: 17.5px; }
   .page-title { font-size: 22px; }
 }
+
+/* ========== CHAT (live chat additions) ========== */
+
+.msg-edited {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  opacity: .7;
+}
+
+.chat-bar-state.is-off { color: #b42318; }
+.chat-bar-state.is-off i {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, .16);
+}
+
+.toast {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+
+.toast.is-show {
+  opacity: 1;
+  visibility: visible;
+}

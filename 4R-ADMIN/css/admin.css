@@ -757,3 +757,205 @@
 .adm-empty h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
 .adm-empty p { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; }
 .adm-empty .btn { width: auto; display: inline-flex; }
+
+/* ==========================================
+   CHAT LIST
+   ========================================== */
+
+.menu-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 1px;
+}
+
+.menu-badge[hidden] { display: none; }
+
+.adm-chat-last {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-unread {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ==========================================
+   CHAT ROOM
+   ========================================== */
+
+body.adm-room-page { background: var(--bg-soft); }
+
+.adm-room {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 74px);
+  height: calc(100dvh - 74px);
+  background: #ffffff;
+}
+
+@media (min-width: 720px) {
+  .adm-room {
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    height: calc(100dvh - 118px);
+  }
+}
+
+.adm-room-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+.adm-back--ico {
+  padding: 9px 10px;
+  flex: 0 0 auto;
+}
+
+.adm-ava--sm { width: 38px; height: 38px; }
+
+.adm-room-who { flex: 1 1 auto; min-width: 0; }
+
+.adm-room-who strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-room-who small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-room-del {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #b42318;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+
+.adm-room-del:hover { background: #fff1f0; border-color: #ffb4ac; }
+
+.adm-room-msgs {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  padding: 14px 12px;
+  border-radius: 0;
+}
+
+.adm-room .chat-input {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: #ffffff;
+  border-top: 1px solid var(--line);
+}
+
+.adm-room .chat-actions {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  background: #ffffff;
+}
+
+.adm-room .chat-latest {
+  position: absolute;
+  right: 14px;
+  bottom: 132px;
+  z-index: 20;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--blue);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity .18s, transform .18s;
+}
+
+.adm-room .chat-latest.is-show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.adm-room-empty {
+  margin: auto;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.adm-room-empty p {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.msg-edited {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  opacity: .7;
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chats &mdash; 4R-ADMIN</title>
+  <link rel="icon" type="image/jpeg" href="FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg">
+  <link rel="apple-touch-icon" href="ICONS/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0071f0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="4R-ADMIN">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <div class="adm-desktop-note">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"></rect><path d="M11 18h2"></path></svg>
+    Admin Panel mobile ke liye design kiya gaya hai &mdash; best result ke liye phone par kholein.
+  </div>
+
+  <!-- ================= HEADER (menu left) ================= -->
+  <header class="site-header">
+    <div class="header-inner adm-header">
+
+      <div class="menu-wrap">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrop">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="menu-drop" id="menuDrop">
+          <a class="menu-item" href="index.html">Home</a>
+          <a class="menu-item" href="chat.html">Chats</a>
+          <a class="menu-item" href="settings.html">Settings</a>
+          <a class="menu-item" href="../index.html">User Panel</a>
+          <a class="menu-item" href="#" data-install style="display:none">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+            Install App
+          </a>
+          <a class="menu-item" href="#" id="logoutItem">Logout</a>
+        </nav>
+      </div>
+
+      <a class="logo" href="index.html">
+        <img class="logo-img adm-logo" src="FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg" alt="4R-ADMIN">
+      </a>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <main class="adm">
+
+    <div class="adm-head">
+      <h1>Chats</h1>
+      <p>Jis user se baat karni ho us par tap karein.</p>
+    </div>
+
+    <!-- ---------- 2 CARDS SIDE BY SIDE ---------- -->
+    <section class="adm-stats">
+      <div class="adm-stat">
+        <span class="adm-stat-ico">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.6-.8L3 21l1.9-5.2a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 7.9Z"></path></svg>
+        </span>
+        <b id="chatTotal">0</b>
+        <small>Total Chats</small>
+      </div>
+
+      <div class="adm-stat adm-stat--today">
+        <span class="adm-stat-ico">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+        </span>
+        <b id="chatUnread">0</b>
+        <small>Unread</small>
+      </div>
+    </section>
+
+    <!-- ---------- USER LIST ---------- -->
+    <section class="adm-box">
+      <div class="adm-box-head">
+        <h2>Users</h2>
+        <span id="chatCount">0</span>
+      </div>
+      <div class="adm-box-body" id="chatList"></div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
+  </footer>
+
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="../js/chat-db.js"></script>
+  <script defer src="js/auth.js"></script>
+  <script defer src="js/pwa.js"></script>
+  <script defer src="js/admin.js"></script>
+  <script defer src="js/admin-chat.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      "use strict";
+      window.AdminPanel.initShell();
+      window.AdminChat.initList();
+    });
+  </script>
+</body>
+</html>

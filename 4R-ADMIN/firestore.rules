@@ -41,5 +41,28 @@ service cloud.firestore {
       /* Sirf admin delete kar sakta hai */
       allow delete: if isAdmin();
     }
+
+    /* ======================================================
+       SUPPORT CHAT
+       ------------------------------------------------------
+       User bina login ke chat karta hai, isliye chat doc ka
+       random ID hi access key hai (path pata hone par hi read).
+       Admin panel login ke baad hi chat list dikhata hai.
+       ====================================================== */
+
+    match /chats/{chatId} {
+
+      /* user apni chat doc bana / update kar sakta hai */
+      allow read: if true;
+      allow create, update: if true;
+
+      /* poori chat sirf admin delete karega */
+      allow delete: if isAdmin();
+
+      match /messages/{msgId} {
+        /* chat ke andar ke messages (text / photo / file) */
+        allow read, create, update, delete: if true;
+      }
+    }
   }
 }

@@ -9,19 +9,23 @@
      hamesha seedha network (data stale nahi hona chahiye)
    ========================================== */
 
-var VERSION = "4r-admin-v1";
+var VERSION = "4r-admin-v2";
 var SHELL = [
   "./",
   "index.html",
   "login.html",
   "settings.html",
   "complaint.html",
+  "chat.html",
+  "room.html",
   "css/style.css",
   "css/admin.css",
   "js/admin.js",
+  "js/admin-chat.js",
   "js/auth.js",
   "js/firebase-config.js",
   "js/firebase-db.js",
+  "../js/chat-db.js",
   "js/telegram.js",
   "manifest.json",
   "FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg",

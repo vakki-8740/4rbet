@@ -33,6 +33,7 @@
         </button>
         <nav class="menu-drop" id="menuDrop">
           <a class="menu-item" href="index.html">Home</a>
+          <a class="menu-item" href="chat.html">Chats<span class="menu-badge" id="chatBadge" hidden></span></a>
           <a class="menu-item" href="settings.html">Settings</a>
           <a class="menu-item" href="../index.html">User Panel</a>
           <a class="menu-item" href="#" data-install style="display:none">
@@ -99,10 +100,12 @@
 
   <script defer src="js/firebase-config.js"></script>
   <script defer src="js/firebase-db.js"></script>
+  <script defer src="../js/chat-db.js"></script>
   <script defer src="js/auth.js"></script>
   <script defer src="js/pwa.js"></script>
   <script defer src="js/telegram.js"></script>
   <script defer src="js/admin.js"></script>
+  <script defer src="js/admin-chat.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       "use strict";
@@ -139,6 +142,16 @@
       window.addEventListener("4r-sync", render);
       window.addEventListener("focus", function () { A.refresh().then(render); });
       window.addEventListener("storage", render);
+
+      /* ---------- chat unread badge (menu) ---------- */
+      if (window.AdminChat) {
+        window.AdminChat.watchUnread(function (n) {
+          var b = document.getElementById("chatBadge");
+          if (!b) return;
+          b.textContent = n > 99 ? "99+" : n;
+          b.hidden = !n;
+        });
+      }
     });
   </script>
 </body>

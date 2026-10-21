@@ -45,7 +45,7 @@
       <span class="chat-bar-ava">4R</span>
       <div class="chat-bar-who">
         <strong>4RABET HELP CENTER</strong>
-        <span class="chat-bar-state"><i></i> Online &middot; Reply in minutes</span>
+        <span class="chat-bar-state" id="chatState"><i></i> Online &middot; Reply in minutes</span>
       </div>
     </div>
 
@@ -106,65 +106,30 @@
     <p>&copy; <span class="year"></span> 4R BET &mdash; All Rights Reserved</p>
   </footer>
 
+  <!-- ================= NAME POPUP (pehli baar) ================= -->
+  <div class="modal-backdrop" id="nameModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.6-.8L3 21l1.9-5.2a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 7.9Z"></path></svg>
+      </div>
+      <h3 class="modal-title">Apna naam batayein</h3>
+      <p class="modal-text">Support team aapko is naam se pehchanegi.</p>
+      <div class="field" style="text-align:left">
+        <label class="label" for="nameField">Your Name</label>
+        <input type="text" id="nameField" maxlength="40" placeholder="Aapka naam" autocomplete="name">
+      </div>
+      <button type="button" class="btn btn--block" id="nameSave">Start Chat</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="js/chat-db.js"></script>
   <script defer src="js/telegram.js"></script>
   <script defer src="js/main.js"></script>
-  <script>
-    (function () {
-      "use strict";
-
-      var box    = document.getElementById("chatMessages");
-      var latest = document.getElementById("btnLatest");
-
-      /* user ki "scroll kiya hai" ya nahi - yahi decide karta hai
-         ki naya message aate hi neeche kheenchein ya nahi */
-      var stick = true;
-
-      function atBottom() {
-        return box.scrollHeight - box.scrollTop - box.clientHeight < 90;
-      }
-
-      function toBottom(smooth) {
-        try {
-          box.scrollTo({ top: box.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-        } catch (e) {
-          box.scrollTop = box.scrollHeight;
-        }
-      }
-
-      function paintLatest() {
-        latest.classList.toggle("is-show", !atBottom());
-      }
-
-      box.addEventListener("scroll", function () {
-        stick = atBottom();
-        paintLatest();
-      }, { passive: true });
-
-      var ro = new MutationObserver(function () {
-        if (stick) toBottom(true);
-        paintLatest();
-      });
-      ro.observe(box, { childList: true, subtree: true });
-
-      setTimeout(function () { toBottom(); stick = true; paintLatest(); }, 2400);
-
-      latest.addEventListener("click", function () {
-        toBottom(true);
-        stick = true;
-        paintLatest();
-      });
-
-      /* keyboard khulne par chat neeche chipke */
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", function () {
-          setTimeout(function () { if (stick) toBottom(); paintLatest(); }, 80);
-        });
-      }
-
-      /* double tap / pinch zoom band (sirf is page par) */
-      document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
-      document.addEventListener("dblclick", function (e) { e.preventDefault(); }, { passive: false });
-    })();
-  </script>
+  <script defer src="js/chat-page.js"></script>
 </body>
 </html>
