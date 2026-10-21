@@ -1,15 +1,16 @@
 /* ==========================================
    4R BET  |  Firebase Configuration
-   Project: rbet-6770a
+   Project: rbet-ffd57
    ========================================== */
 
 window.FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyBVksgH_dhzRWRWCSsr4cTrJDOxj77cMeA",
-  authDomain:        "rbet-6770a.firebaseapp.com",
-  projectId:         "rbet-6770a",
-  storageBucket:     "rbet-6770a.firebasestorage.app",
-  messagingSenderId: "285664425037",
-  appId:             "1:285664425037:web:66f3cd7d306ce2f3f21804"
+  apiKey:            "AIzaSyCZ1lU6c4prRp1Yns3MVfLdt9ZtkCIz6kQ",
+  authDomain:        "rbet-ffd57.firebaseapp.com",
+  databaseURL:       "https://rbet-ffd57-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "rbet-ffd57",
+  storageBucket:     "rbet-ffd57.firebasestorage.app",
+  messagingSenderId: "1053372464314",
+  appId:             "1:1053372464314:web:cc22410f2951c657ab1683"
 };
 
 /* Firestore collection jis me complaints save hoti hain */
