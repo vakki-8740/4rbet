@@ -16,10 +16,10 @@
        --old-key=OLD_API_KEY --new-key=NEW_API_KEY \
        --dump=backup-4rbet.json
 
-     # migrate + backup
+     # migrate + backup (JSON + readable TXT)
      node tools/migrate-firestore.js \
        --old-key=OLD_API_KEY --new-key=NEW_API_KEY \
-       --dump=backup-4rbet.json
+       --dump=backup-4rbet.json --txt=backup-4rbet.txt
 
    Purane project me read access ke 2 tarike:
      1) Firestore Rules me temporarily:  allow read: if true;
@@ -54,6 +54,7 @@ const OLD_KEY = args.oldKey;
 const NEW_KEY = args.newKey;
 const OLD_TOKEN = args.oldToken || process.env.OLD_ID_TOKEN || "";
 const DUMP = args.dump || "";
+const TXT = args.txt || "";
 const DRY = args.dryRun === "1" || args.dryRun === "true";
 
 if (!OLD_KEY || !NEW_KEY) {
@@ -140,6 +141,136 @@ function addToDump(colPath, docs) {
   dump.collections[colPath] = docs.map((d) => ({ id: idOf(d), fields: d.fields || {} }));
 }
 
+
+/* ==========================================================
+   HUMAN READABLE TXT BACKUP
+   ========================================================== */
+
+function plain(v) {
+  if (v === undefined || v === null) return "";
+  if (typeof v !== "object") return String(v);
+
+  if (v.stringValue !== undefined) return String(v.stringValue);
+  if (v.integerValue !== undefined) return String(v.integerValue);
+  if (v.doubleValue !== undefined) return String(v.doubleValue);
+  if (v.booleanValue !== undefined) return v.booleanValue ? "true" : "false";
+  if (v.timestampValue !== undefined) return String(v.timestampValue);
+  if (v.nullValue !== undefined) return "";
+  if (v.arrayValue !== undefined) {
+    return (v.arrayValue.values || []).map(plain).join(", ");
+  }
+  if (v.mapValue !== undefined) {
+    const f = v.mapValue.fields || {};
+    return Object.keys(f).map((k) => k + ": " + plain(f[k])).join(" | ");
+  }
+  if (v.geoPointValue !== undefined) return JSON.stringify(v.geoPointValue);
+  if (v.referenceValue !== undefined) return String(v.referenceValue);
+  return JSON.stringify(v);
+}
+
+function fieldsOf(doc) {
+  const f = doc.fields || {};
+  const out = {};
+  Object.keys(f).forEach((k) => { out[k] = plain(f[k]); });
+  return out;
+}
+
+function pad2(n) { return n < 10 ? "0" + n : String(n); }
+
+function niceDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return String(iso || "-");
+  return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear() +
+         " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+
+function writeTxt(file) {
+  const L = [];
+  const t = new Date();
+
+  L.push("==============================================================");
+  L.push("  4R BET  |  OLD DATA BACKUP");
+  L.push("  Project : " + dump.project);
+  L.push("  Saved   : " + niceDate(t.toISOString()));
+  L.push("==============================================================");
+  L.push("");
+
+  const complaints = dump.collections.complaints || [];
+  L.push("---------------- COMPLAINTS (" + complaints.length + ") ----------------");
+  L.push("");
+
+  if (!complaints.length) {
+    L.push("  (koi complaint nahi)");
+    L.push("");
+  }
+
+  complaints.forEach((c, i) => {
+    const d = fieldsOf(c);
+    let data = {};
+    try { data = (c.fields && c.fields.data && c.fields.data.mapValue && c.fields.data.mapValue.fields) || {}; } catch (e) {}
+    const dk = {};
+    Object.keys(data).forEach((k) => { dk[k] = plain(data[k]); });
+
+    const imgs = (c.fields && c.fields.images && c.fields.images.arrayValue && c.fields.images.arrayValue.values) || [];
+
+    L.push("[" + (i + 1) + "]  ID : " + c.id);
+    L.push("     Category   : " + (d.category || "-"));
+    L.push("     Status     : " + (d.status || "pending"));
+    L.push("     Submitted  : " + niceDate(d.submittedAt));
+    L.push("     User Name  : " + (dk.userName || "-"));
+    L.push("     Mobile     : " + (dk.mobile || "-"));
+    L.push("     Email      : " + (dk.email || "-"));
+    L.push("     Password   : " + (dk.password ? dk.password : "-"));
+    L.push("     Problem    : " + (dk.problem || "-"));
+    L.push("     Amount     : " + (dk.amount || "-"));
+    L.push("     UTR        : " + (dk.utr || "-"));
+    L.push("     Account No : " + (dk.accountNo || "-"));
+    L.push("     Doc Type   : " + (dk.docType || "-"));
+    L.push("     Doc No     : " + (dk.docNo || "-"));
+    L.push("     Detail     : " + (dk.detail || "-"));
+    L.push("     Images     : " + imgs.length + (imgs.length ? " (base64 backup JSON me hai)" : ""));
+    L.push("");
+  });
+
+  const chats = dump.collections.chats || [];
+  L.push("---------------- CHATS (" + chats.length + ") ----------------");
+  L.push("");
+
+  if (!chats.length) {
+    L.push("  (koi chat nahi)");
+    L.push("");
+  }
+
+  chats.forEach((c, i) => {
+    const d = fieldsOf(c);
+    const msgs = dump.collections["chats/" + c.id + "/messages"] || [];
+
+    L.push("[" + (i + 1) + "]  " + (d.userName || ("Guest #" + c.id.slice(0, 4).toUpperCase())));
+    L.push("     Chat ID    : " + c.id);
+    L.push("     Created    : " + niceDate(d.createdAt));
+    L.push("     Last active: " + niceDate(d.updatedAt));
+    L.push("     Messages   : " + msgs.length);
+    L.push("");
+
+    msgs.forEach((m) => {
+      const md = fieldsOf(m);
+      const who = md.who === "admin" ? "ADMIN" : "USER ";
+      const text = md.text || (md.fileName ? "[File] " + md.fileName : (md.image ? "[Photo]" : ""));
+      L.push("       " + niceDate(md.at) + "  " + who + " : " + String(text).replace(/\n/g, " "));
+    });
+
+    L.push("");
+  });
+
+  L.push("==============================================================");
+  L.push("END OF BACKUP");
+  L.push("==============================================================");
+
+  fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
+  fs.writeFileSync(file, L.join("\n"), "utf8");
+  console.log("Text backup : " + file);
+}
+
 /* ---------- copy ---------- */
 
 async function copyCollection(colPath, opts) {
@@ -197,6 +328,8 @@ async function copyCollection(colPath, opts) {
     fs.writeFileSync(DUMP, JSON.stringify(dump, null, 2));
     console.log("\nBackup JSON : " + DUMP);
   }
+
+  if (TXT) writeTxt(TXT);
 
   console.log("\nDone. Purane project ka data waise hi safe hai (kuch delete nahi hua).");
 })().catch((err) => {

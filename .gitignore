@@ -10,3 +10,7 @@ desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+# backups (data files repo me na jayein)
+backup-*.json
+backup-*.txt
