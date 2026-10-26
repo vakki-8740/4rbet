@@ -101,8 +101,12 @@ window.AdminChat = (function () {
              '</button>';
     }
 
-    function render(list) {
+    var lastErr = "";
+
+    function render(list, online, reason) {
       var unread = 0;
+
+      lastErr = online ? "" : (reason || (C.reason ? C.reason() : ""));
 
       list.forEach(function (c) { unread += Number(c.unreadAdmin || 0); });
 
@@ -113,13 +117,16 @@ window.AdminChat = (function () {
       document.title = (unread ? "(" + unread + ") " : "") + "Chats \u2014 4R-ADMIN";
 
       if (!list.length) {
+        var whyHtml = lastErr
+          ? '<h3>Chat load nahi hui</h3><p>' + esc(lastErr) + '</p>'
+          : '<h3>Abhi koi chat nahi hai</h3>' +
+            '<p>Jab user Online Chat page se message bhejega, wo yahan dikhega.</p>';
+
         listEl.innerHTML =
           '<div class="adm-empty">' +
             '<div class="adm-empty-ico">' +
               '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.6-.8L3 21l1.9-5.2a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 7.9Z"></path></svg>' +
-            '</div>' +
-            '<h3>Abhi koi chat nahi hai</h3>' +
-            '<p>Jab user Online Chat page se message bhejega, wo yahan dikhega.</p>' +
+            '</div>' + whyHtml +
             '<a class="btn" href="../online-chat.html">Open User Chat</a>' +
           '</div>';
         return;
@@ -471,9 +478,9 @@ window.AdminChat = (function () {
       if (unread > 0) C.markRead(id, "admin");
     });
 
-    C.watchMessages(id, function (list, online) {
+    C.watchMessages(id, function (list, online, reason) {
       if (!online) {
-        metaEl.textContent = "Offline \u2014 internet check karein";
+        metaEl.textContent = reason || (C.reason ? C.reason() : "Offline \u2014 internet check karein");
         return;
       }
       render(list);

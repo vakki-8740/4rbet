@@ -30,8 +30,17 @@ window.FourRChat = (function () {
     db: null,
     online: false,
     checked: false,
-    lastError: ""
+    lastError: "",
+    lastCode: "",      /* raw Firestore error code (permission-denied / unavailable ...) */
+    lastWhy: ""        /* kis wajah se fail hua: RULES | NETWORK | DATABASE | CONFIG | SDK | OK */
   };
+
+  /* Browser khud online hai ya nahi - ye Firestore error se alag cheez hai.
+     navigator.onLine true hai phir bhi Firestore fail ho to problem
+     internet NAHI, rules/config/database ki hai. */
+  function browserOnline() {
+    return window.navigator ? navigator.onLine !== false : true;
+  }
 
   /* ==========================================
      INIT
@@ -44,12 +53,14 @@ window.FourRChat = (function () {
     var SDK = window.firebase;
 
     if (!SDK) {
-      state.lastError = "Firebase SDK load nahi hua (internet check karein)";
+      state.lastError = "Firebase SDK load nahi hua (gstatic.com block hai ya internet nahi)";
+      state.lastWhy = "SDK";
       return false;
     }
 
     if (!window.FIREBASE_CONFIG) {
       state.lastError = "firebase-config.js missing hai";
+      state.lastWhy = "CONFIG";
       return false;
     }
 
@@ -60,10 +71,13 @@ window.FourRChat = (function () {
       state.db = SDK.firestore();
       state.online = true;
       state.lastError = "";
+      state.lastCode = "";
+      state.lastWhy = "";
     } catch (e) {
       state.db = null;
       state.online = false;
-      state.lastError = e.message || String(e);
+      state.lastError = friendly(e);
+      state.lastWhy = "CONFIG";
     }
 
     return state.online;
@@ -182,7 +196,7 @@ window.FourRChat = (function () {
 
   function watchChat(id, cb) {
     if (!init() || !state.db) {
-      cb(null, false);
+      cb(null, false, reason());
       return function () {};
     }
 
@@ -193,14 +207,14 @@ window.FourRChat = (function () {
       cb(o, true);
     }, function (err) {
       state.lastError = friendly(err);
-      cb(null, false);
+      cb(null, false, reason());
     });
   }
 
   /* Admin: saari chats (newest activity first) */
   function watchChats(cb) {
     if (!init() || !state.db) {
-      cb([], false);
+      cb([], false, reason());
       return function () {};
     }
 
@@ -216,7 +230,7 @@ window.FourRChat = (function () {
         cb(list, true);
       }, function (err) {
         state.lastError = friendly(err);
-        cb([], false);
+        cb([], false, reason());
       });
   }
 
@@ -226,7 +240,7 @@ window.FourRChat = (function () {
 
   function watchMessages(id, cb) {
     if (!init() || !state.db) {
-      cb([], false);
+      cb([], false, reason());
       return function () {};
     }
 
@@ -242,7 +256,7 @@ window.FourRChat = (function () {
         cb(list, true);
       }, function (err) {
         state.lastError = friendly(err);
-        cb([], false);
+        cb([], false, reason());
       });
   }
 
@@ -427,20 +441,204 @@ window.FourRChat = (function () {
      ERRORS
      ========================================== */
 
+  /* ==========================================
+     ERRORS
+     Har Firestore error ko uski ASLI wajah ke
+     hisaab se pehchano - "internet nahi hai" tab
+     hi bolo jab sach me network ki problem ho.
+     ========================================== */
+
   function friendly(err) {
     var code = (err && err.code) || "";
     var msg  = (err && err.message) || String(err);
+    var low  = String(msg).toLowerCase();
 
-    if (code === "permission-denied" || /permission/i.test(msg)) {
-      return "Firestore rules me chat allowed nahi hai (firestore.rules update karein)";
+    state.lastCode = code;
+
+    /* ---- 1. config / project level ---- */
+    if (/api key not valid|api key not enabled|invalid api key|api_key/.test(low)) {
+      state.lastWhy = "CONFIG";
+      return "Firebase API key valid nahi hai — js/firebase-config.js check karein";
     }
-    if (code === "unavailable" || /network|offline|fetch/i.test(msg)) {
-      return "Internet nahi hai. Connection check karein.";
+
+    if (/does not exist|not found|project.*deleted|no such project/.test(low) &&
+        /project|firebase/.test(low)) {
+      state.lastWhy = "CONFIG";
+      return "Firebase project exist nahi karta (projectId galat ya project delete ho gaya)";
     }
-    if (/exceed|too large|1 ?MiB|1048576/i.test(msg)) {
+
+    if (/firestore api.*(not enabled|has not been enabled)|cloud firestore api/.test(low)) {
+      state.lastWhy = "DATABASE";
+      return "Project me Cloud Firestore API enable nahi hai";
+    }
+
+    /* ---- 2. database bana hi nahi ---- */
+    if (code === "failed-precondition" ||
+        /failed-precondition|database.*does not exist|has not been created|firestore.*not.*created/.test(low)) {
+      state.lastWhy = "DATABASE";
+      return "Firestore database create nahi hua — Firebase Console > Firestore Database > Create Database";
+    }
+
+    /* ---- 3. rules ---- */
+    if (code === "permission-denied" || /permission/i.test(msg) ||
+        /missing or insufficient/.test(low) || /unauthenticated/i.test(low)) {
+      state.lastWhy = "RULES";
+      return "Firestore rules chat ko allow nahi kar rahi — firestore.rules publish karein";
+    }
+
+    /* ---- 4. sach me network ---- */
+    if (!browserOnline()) {
+      state.lastWhy = "NETWORK";
+      return "Internet band hai (device offline hai)";
+    }
+
+    if (code === "unavailable" || /network|offline|failed to fetch|load failed|net::|cors|timeout/.test(low)) {
+      state.lastWhy = "NETWORK";
+      return "Firebase server tak request nahi pahunchi — internet / firewall / file:// protocol";
+    }
+
+    /* ---- 5. size ---- */
+    if (/exceed|too large|1 ?MiB|1048576/.test(low)) {
+      state.lastWhy = "SIZE";
       return "Message bahut bada hai.";
     }
+
+    state.lastWhy = "OTHER";
     return msg;
+  }
+
+  /* Kis wajah se fail hua - UI isi se sahi hint dikhaata hai */
+  function why() {
+    if (!state.checked) init();
+    if (state.db && !state.lastWhy) return "OK";
+    return state.lastWhy || (state.db ? "OK" : "SDK");
+  }
+
+  var HINTS = {
+    OK:       "Connection theek hai.",
+    SDK:      "Firebase SDK (gstatic.com) load nahi hua. Internet chalu karein ya CDN unblock karein.",
+    CONFIG:   "js/firebase-config.js me projectId / apiKey galat hai. Sahi Firebase project ki config daalein.",
+    DATABASE: "Firebase Console > Firestore Database > Create Database (Native mode) se database banayein.",
+    RULES:    "Repo ki firestore.rules file ko Firebase Console > Firestore Database > Rules me paste karke PUBLISH dabayein.",
+    NETWORK:  "Device offline hai, ya page file:// se khula hai (http(s) server se kholna zaroori hai), ya network Firebase ko block kar raha hai.",
+    SIZE:     "Attachment chhota karein.",
+    OTHER:    "Neeche diye gaye error code ko check karein."
+  };
+
+  function hint(k) { return HINTS[k] || HINTS.OTHER; }
+
+  /* UI ke liye ek line me asli wajah */
+  function reason() {
+    if (state.lastError) return state.lastError;
+    return hint(why());
+  }
+
+  /* ==========================================
+     DIAGNOSE  : ek-ek karke test chalao aur
+     batayo ki problem KAHAN hai
+     ========================================== */
+
+  function diagnose() {
+    var out = {
+      at: new Date().toISOString(),
+      protocol: location.protocol,
+      host: location.host || "(file)",
+      browserOnline: browserOnline(),
+      sdk: !!window.firebase,
+      config: !!window.FIREBASE_CONFIG,
+      projectId: (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.projectId) || "",
+      apiKeyTail: (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey || "").slice(-6),
+      chatId: myId(),
+      chatName: myName() || "(not set)",
+      dbReady: false,
+      tests: []
+    };
+
+    function test(name, fn) {
+      var t0 = Date.now();
+
+      return Promise.resolve()
+        .then(fn)
+        .then(function (detail) {
+          out.tests.push({ name: name, ok: true, ms: Date.now() - t0, detail: detail || "" });
+          return true;
+        }, function (err) {
+          out.tests.push({
+            name: name,
+            ok: false,
+            ms: Date.now() - t0,
+            code: (err && err.code) || "",
+            error: friendly(err)
+          });
+          return false;
+        });
+    }
+
+    if (location.protocol === "file:") {
+      out.tests.push({
+        name: "Page protocol",
+        ok: false,
+        code: "file://",
+        error: "Page file:// se khula hai — Firestore browser se connect nahi kar sakta. http(s) server se kholna zaroori hai."
+      });
+    }
+
+    if (!init()) {
+      out.tests.push({ name: "Firebase init", ok: false, code: state.lastCode, error: state.lastError });
+      out.why = why();
+      out.hint = hint(out.why);
+      return Promise.resolve(out);
+    }
+
+    out.dbReady = !!state.db;
+
+    /* reset - purana error report me na aaye */
+    state.lastError = "";
+    state.lastCode = "";
+    state.lastWhy = "";
+
+    var probeChat = "__diagnostic__";
+    var probeMsg  = "diag-" + Date.now();
+
+    return test("Firestore read (chats list)", function () {
+        return coll().limit(1).get().then(function (s) { return s.size + " doc mila"; });
+      })
+      .then(function () {
+        return test("Chat doc read (aapki chat)", function () {
+          return chatRef(myId()).get().then(function (s) {
+            return s.exists ? "chat exist karti hai" : "chat abhi bani nahi (normal)";
+          });
+        });
+      })
+      .then(function () {
+        return test("Messages read", function () {
+          return msgColl(myId()).limit(1).get().then(function (s) { return s.size + " message mila"; });
+        });
+      })
+      .then(function () {
+        return test("Write permission (probe doc)", function () {
+          return chatRef(probeChat)
+            .set({ probe: true, at: new Date().toISOString() })
+            .then(function () { return "create ok"; });
+        });
+      })
+      .then(function () {
+        return test("Message write + delete (probe)", function () {
+          return msgColl(probeChat).doc(probeMsg)
+            .set({ who: "user", text: "diagnostic", at: new Date().toISOString() })
+            .then(function () { return msgColl(probeChat).doc(probeMsg).delete(); })
+            .then(function () { return "write + delete ok"; });
+        });
+      })
+      .then(function () {
+        /* probe chat doc hata do (rules me delete sirf admin - fail ho to ignore) */
+        return chatRef(probeChat).delete().catch(function () { return null; });
+      })
+      .then(function () {
+        out.why = why();
+        out.hint = hint(out.why);
+        return out;
+      });
   }
 
   return {
@@ -448,6 +646,12 @@ window.FourRChat = (function () {
     init: init,
     isOnline: function () { return init() && !!state.db; },
     lastError: function () { return state.lastError; },
+    lastCode: function () { return state.lastCode; },
+    why: why,
+    hint: function () { return hint(why()); },
+    reason: reason,
+    browserOnline: browserOnline,
+    diagnose: diagnose,
 
     myId: myId,
     myName: myName,

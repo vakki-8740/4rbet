@@ -71,12 +71,157 @@
     toastTimer = setTimeout(function () { el.classList.remove("is-show"); }, 2600);
   }
 
-  function setState(online) {
+  function setState(online, reason) {
     if (!stateEl) return;
-    stateEl.innerHTML = online
-      ? "<i></i> Online &middot; Reply in minutes"
-      : "<i></i> Offline &middot; internet check karein";
-    stateEl.classList.toggle("is-off", !online);
+
+    if (online) {
+      stateEl.innerHTML = "<i></i> Online &middot; Reply in minutes";
+      stateEl.classList.remove("is-off");
+      stateEl.removeAttribute("title");
+      return;
+    }
+
+    var why = reason || C.reason() || "Connection problem";
+    stateEl.innerHTML = "<i></i> " + esc(why) + " &middot; tap to check";
+    stateEl.classList.add("is-off");
+    stateEl.setAttribute("title", why);
+  }
+
+  /* ==========================================
+     CONNECTION CHECK
+     Status bar par tap karein -> asli problem
+     (rules / config / database / network) dikhegi.
+     ========================================== */
+
+  var diagBack = null;
+  var diagLast = null;
+  var diagAuto = false;
+
+  function buildDiag() {
+    if (diagBack) return diagBack;
+
+    diagBack = document.createElement("div");
+    diagBack.className = "modal-backdrop";
+    diagBack.setAttribute("role", "dialog");
+    diagBack.setAttribute("aria-modal", "true");
+    diagBack.innerHTML =
+      '<div class="modal chat-popup diag-modal">' +
+        '<button type="button" class="popup-x" aria-label="Close">&times;</button>' +
+        '<h3 class="modal-title chat-popup-title">Connection Check</h3>' +
+        '<p class="diag-verdict">Check ho raha hai...</p>' +
+        '<div class="diag-list"></div>' +
+        '<div class="diag-btns">' +
+          '<button type="button" class="btn btn--block diag-run">Dobara Check Karein</button>' +
+          '<button type="button" class="btn btn--ghost diag-copy">Report Copy</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(diagBack);
+
+    diagBack.querySelector(".popup-x").addEventListener("click", closeDiag);
+    diagBack.addEventListener("click", function (e) {
+      if (e.target === diagBack) closeDiag();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && diagBack.classList.contains("is-open")) closeDiag();
+    });
+
+    diagBack.querySelector(".diag-run").addEventListener("click", runDiag);
+    diagBack.querySelector(".diag-copy").addEventListener("click", copyDiag);
+
+    return diagBack;
+  }
+
+  function closeDiag() {
+    if (diagBack) diagBack.classList.remove("is-open");
+  }
+
+  function openDiag() {
+    buildDiag();
+    diagBack.classList.add("is-open");
+    runDiag();
+  }
+
+  function runDiag() {
+    var box = buildDiag();
+    var verdict = box.querySelector(".diag-verdict");
+    var list = box.querySelector(".diag-list");
+    var runBtn = box.querySelector(".diag-run");
+
+    runBtn.disabled = true;
+    runBtn.classList.add("is-loading");
+    verdict.className = "diag-verdict";
+    verdict.textContent = "Firebase se connect karke test kiye ja rahe hain...";
+    list.innerHTML = "";
+
+    if (!C.diagnose) {
+      verdict.textContent = "chat-db.js purana hai — page hard refresh karein.";
+      runBtn.disabled = false;
+      runBtn.classList.remove("is-loading");
+      return;
+    }
+
+    C.diagnose().then(function (rep) {
+      diagLast = rep;
+      runBtn.disabled = false;
+      runBtn.classList.remove("is-loading");
+
+      var bad = rep.tests.filter(function (t) { return !t.ok; });
+
+      verdict.className = "diag-verdict " + (bad.length ? "diag-verdict--bad" : "diag-verdict--ok");
+      verdict.innerHTML = bad.length
+        ? "<b>Problem:</b> " + esc(rep.hint || rep.why || "unknown")
+        : "<b>Sab theek hai</b> — chat connect ho gayi.";
+
+      list.innerHTML = rep.tests.map(function (t) {
+        return '<div class="diag-row ' + (t.ok ? "diag-row--ok" : "diag-row--bad") + '">' +
+                 '<span class="diag-dot"></span>' +
+                 '<span class="diag-name">' + esc(t.name) + '</span>' +
+                 '<span class="diag-msg">' +
+                   esc(t.ok ? (t.detail || "ok") : (t.error + (t.code ? " [" + t.code + "]" : ""))) +
+                 '</span>' +
+               '</div>';
+      }).join("") +
+      '<div class="diag-meta">' +
+        'project: <b>' + esc(rep.projectId || "-") + '</b> &middot; ' +
+        'sdk: <b>' + (rep.sdk ? "loaded" : "MISSING") + '</b> &middot; ' +
+        'device online: <b>' + (rep.browserOnline ? "yes" : "no") + '</b> &middot; ' +
+        'protocol: <b>' + esc(rep.protocol) + '</b> &middot; ' +
+        'chatId: <b>' + esc(String(rep.chatId).slice(0, 6)) + '</b>' +
+      '</div>';
+
+      /* connection theek ho gaya to status bar bhi update */
+      if (!bad.length) setState(true);
+      else setState(false, rep.hint || rep.why);
+    });
+  }
+
+  function copyDiag() {
+    if (!diagLast) { toast("Pehle check chalayein"); return; }
+
+    var text = JSON.stringify(diagLast, null, 2);
+
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); toast("Report copy ho gayi"); }
+      catch (e) { toast("Copy nahi hua"); }
+      ta.remove();
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast("Report copy ho gayi"); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  /* status bar par tap -> check popup */
+  if (stateEl) {
+    stateEl.style.cursor = "pointer";
+    stateEl.addEventListener("click", openDiag);
   }
 
   /* ==========================================
@@ -373,7 +518,8 @@
     if (!text) return;
 
     if (!C.isOnline()) {
-      toast("Internet nahi hai. Connection check karein.");
+      toast(C.reason() || "Firebase connect nahi hua. Status bar par tap karke check karein.");
+      openDiag();
       return;
     }
 
@@ -444,18 +590,27 @@
     if (started) return;
     started = true;
 
+    /* ek hi baar khud check popup kholo, taaki asli wajah turant samajh aa jaye */
+    function autoDiag() {
+      if (diagAuto) return;
+      diagAuto = true;
+      setTimeout(openDiag, 400);
+    }
+
     C.ensureChat(chatId, myName).then(function (res) {
-      setState(!!C.isOnline());
+      if (C.isOnline()) setState(true);
+      else { setState(false, res && res.error); autoDiag(); }
       if (res && !res.ok) toast(res.error || "Chat connect nahi hua");
     });
 
-    C.watchMessages(chatId, function (list, online) {
-      setState(online);
+    C.watchMessages(chatId, function (list, online, reason) {
+      setState(online, reason);
+      if (!online) autoDiag();
       render(list);
     });
 
-    C.watchChat(chatId, function (chat, online) {
-      if (!online) { setState(false); return; }
+    C.watchChat(chatId, function (chat, online, reason) {
+      if (!online) { setState(false, reason); autoDiag(); return; }
       setState(true);
       if (!chat) return;
 

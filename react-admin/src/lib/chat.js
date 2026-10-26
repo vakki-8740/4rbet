@@ -106,7 +106,7 @@ export function getChat(id) {
       return { ok: true, offline: false, chat: o };
     })
     .catch((err) => {
-      setLastError(err);
+      setLastError(classify(err));
       return { ok: false, offline: true, chat: null };
     });
 }
@@ -114,7 +114,7 @@ export function getChat(id) {
 export function watchChat(id, cb) {
   const r = chatRef(id);
   if (!r) {
-    cb(null, false);
+    cb(null, false, reason());
     return () => {};
   }
 
@@ -129,8 +129,8 @@ export function watchChat(id, cb) {
       cb(o, true);
     },
     (err) => {
-      setLastError(err);
-      cb(null, false);
+      setLastError(classify(err));
+      cb(null, false, reason());
     }
   );
 }
@@ -138,7 +138,7 @@ export function watchChat(id, cb) {
 export function watchChats(cb) {
   const c = coll();
   if (!c) {
-    cb([], false);
+    cb([], false, reason());
     return () => {};
   }
 
@@ -155,8 +155,8 @@ export function watchChats(cb) {
         cb(list, true);
       },
       (err) => {
-        setLastError(err);
-        cb([], false);
+        setLastError(classify(err));
+        cb([], false, reason());
       }
     );
 }
@@ -164,7 +164,7 @@ export function watchChats(cb) {
 export function watchMessages(id, cb) {
   const m = msgColl(id);
   if (!m) {
-    cb([], false);
+    cb([], false, reason());
     return () => {};
   }
 
@@ -181,8 +181,8 @@ export function watchMessages(id, cb) {
         cb(list, true);
       },
       (err) => {
-        setLastError(err);
-        cb([], false);
+        setLastError(classify(err));
+        cb([], false, reason());
       }
     );
 }
@@ -240,7 +240,7 @@ export function send(id, msg) {
     .commit()
     .then(() => ({ ok: true, offline: false }))
     .catch((err) => {
-      setLastError(err);
+      setLastError(classify(err));
       return { ok: false, offline: true, error: err.message };
     });
 }
@@ -275,7 +275,7 @@ export function deleteChat(id) {
     })
     .then(() => ({ ok: true }))
     .catch((err) => {
-      setLastError(err);
+      setLastError(classify(err));
       return { ok: false, error: err.message };
     });
 }
@@ -336,6 +336,93 @@ export function readImage(file) {
 
     reader.readAsDataURL(file);
   });
+}
+
+/* ==========================================
+   ERROR CLASSIFICATION
+   "internet nahi hai" tab hi bolo jab sach me
+   network ki problem ho - warna asli wajah batao.
+   ========================================== */
+
+export function browserOnline() {
+  return typeof navigator === "undefined" ? true : navigator.onLine !== false;
+}
+
+const HINTS = {
+  OK: "Connection theek hai.",
+  SDK: "Firebase SDK load nahi hua. Internet / CDN check karein.",
+  CONFIG: "js/firebase-config.js me projectId ya apiKey galat hai.",
+  DATABASE: "Firebase Console > Firestore Database > Create Database (Native mode) se database banayein.",
+  RULES: "Repo ki firestore.rules ko Firebase Console > Firestore Database > Rules me paste karke PUBLISH dabayein.",
+  NETWORK: "Device offline hai, ya page file:// se khula hai (http(s) server zaroori hai), ya network Firebase ko block kar raha hai.",
+  SIZE: "Attachment chhota karein.",
+  OTHER: "Error code check karein."
+};
+
+let lastWhy = "";
+let lastCode = "";
+
+export function classify(err) {
+  const code = (err && err.code) || "";
+  const msg = (err && err.message) || String(err);
+  const low = String(msg).toLowerCase();
+
+  lastCode = code;
+
+  if (/api key not valid|api key not enabled|invalid api key|api_key/.test(low)) {
+    lastWhy = "CONFIG";
+    return "Firebase API key valid nahi hai — js/firebase-config.js check karein";
+  }
+
+  if (/does not exist|not found|no such project/.test(low) && /project|firebase/.test(low)) {
+    lastWhy = "CONFIG";
+    return "Firebase project exist nahi karta (projectId galat ya project delete ho gaya)";
+  }
+
+  if (/firestore api.*(not enabled|has not been enabled)|cloud firestore api/.test(low)) {
+    lastWhy = "DATABASE";
+    return "Project me Cloud Firestore API enable nahi hai";
+  }
+
+  if (code === "failed-precondition" || /failed-precondition|has not been created/.test(low)) {
+    lastWhy = "DATABASE";
+    return "Firestore database create nahi hua — Firebase Console > Firestore Database > Create Database";
+  }
+
+  if (code === "permission-denied" || /permission/i.test(msg) || /missing or insufficient/.test(low)) {
+    lastWhy = "RULES";
+    return "Firestore rules chat ko allow nahi kar rahi — firestore.rules publish karein";
+  }
+
+  if (!browserOnline()) {
+    lastWhy = "NETWORK";
+    return "Internet band hai (device offline hai)";
+  }
+
+  if (code === "unavailable" || /network|offline|failed to fetch|load failed|net::|cors|timeout/.test(low)) {
+    lastWhy = "NETWORK";
+    return "Firebase server tak request nahi pahunchi — internet / firewall / file:// protocol";
+  }
+
+  if (/exceed|too large|1 ?MiB|1048576/.test(low)) {
+    lastWhy = "SIZE";
+    return "Message bahut bada hai.";
+  }
+
+  lastWhy = "OTHER";
+  return msg;
+}
+
+export function why() {
+  return lastWhy || (isOnline() ? "OK" : "SDK");
+}
+
+export function reason() {
+  return HINTS[why()] || HINTS.OTHER;
+}
+
+export function errorCode() {
+  return lastCode;
 }
 
 export function readFile(file) {

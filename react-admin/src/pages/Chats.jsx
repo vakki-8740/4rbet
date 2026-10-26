@@ -8,10 +8,14 @@ import { IconBell, IconChat, IconChev } from "../ui/icons.jsx";
 
 export default function Chats() {
   const [list, setList] = useState([]);
+  const [whyText, setWhyText] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsub = watchChats((l) => setList(l));
+    const unsub = watchChats((l, online, whyMsg) => {
+      setList(l);
+      setWhyText(online ? "" : whyMsg || "");
+    });
     return () => unsub && unsub();
   }, []);
 
@@ -65,8 +69,10 @@ export default function Chats() {
                 <div className="adm-empty-ico">
                   <IconChat size={26} />
                 </div>
-                <h3>Abhi koi chat nahi hai</h3>
-                <p>Jab user Online Chat page se message bhejega, wo yahan dikhega.</p>
+                <h3>{whyText ? "Chat load nahi hui" : "Abhi koi chat nahi hai"}</h3>
+                <p>
+                  {whyText || "Jab user Online Chat page se message bhejega, wo yahan dikhega."}
+                </p>
                 <a className="btn" href="../online-chat.html">Open User Chat</a>
               </div>
             ) : (

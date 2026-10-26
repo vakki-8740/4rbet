@@ -8,6 +8,7 @@ import {
   markRead,
   readFile,
   readImage,
+  reason,
   send,
   watchChat,
   watchMessages
@@ -34,6 +35,7 @@ export default function Room() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [whyText, setWhyText] = useState("");
   const [popup, setPopup] = useState(null);
   const [showLatest, setShowLatest] = useState(false);
 
@@ -61,9 +63,10 @@ export default function Room() {
       if (Number(c.unreadAdmin || 0) > 0) markRead(id, "admin");
     });
 
-    const unsubMsgs = watchMessages(id, (list, online) => {
+    const unsubMsgs = watchMessages(id, (list, online, whyMsg) => {
       if (!alive) return;
       setOffline(!online);
+      setWhyText(online ? "" : whyMsg || "");
       if (online) setMessages(list);
     });
 
@@ -129,7 +132,7 @@ export default function Room() {
     if (!val) return;
 
     if (!isOnline()) {
-      toast("Internet nahi hai. Connection check karein.");
+      toast(reason() || "Firebase connect nahi hua.");
       return;
     }
 
@@ -178,7 +181,7 @@ export default function Room() {
       " \u00b7 " +
       shortTime(chat.updatedAt || chat.createdAt)
     : offline
-    ? "Offline \u2014 internet check karein"
+    ? whyText || "Offline \u2014 internet check karein"
     : "Chat khul rahi hai";
 
   return (
