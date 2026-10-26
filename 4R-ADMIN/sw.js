@@ -3,13 +3,14 @@
    Phone par app install karne ke liye.
 
    Rules:
-   - App ke apne files (html/css/js/icons) -> cache se chalao,
-     offline bhi khule
+   - Code (js/css/json/html) -> network first, offline par cache
+     (warna purana code cache me phans jaata hai)
+   - Images / icons -> cache se chalao, offline bhi khule
    - Firebase / Telegram / gstatic -> kabhi cache nahi,
      hamesha seedha network (data stale nahi hona chahiye)
    ========================================== */
 
-var VERSION = "4r-admin-v3";
+var VERSION = "4r-admin-v4";
 var SHELL = [
   "./",
   "index.html",
@@ -93,7 +94,30 @@ self.addEventListener("fetch", function (e) {
     return;
   }
 
-  /* baaki assets: cache first, phir network se update */
+  /* CODE files (js / css / json / html) -> NETWORK FIRST.
+     Pehle cache-first tha, isliye ../js/chat-db.js jaisi file
+     install ke waqt cache me phans jaati thi aur update ke baad
+     bhi purana code hi chalta rehta tha. */
+  if (/\.(js|mjs|css|json|html?)(\?|$)/i.test(url.pathname)) {
+    e.respondWith(
+      fetch(req)
+        .then(function (res) {
+          if (res && res.status === 200 && res.type === "basic") {
+            var copy = res.clone();
+            caches.open(VERSION).then(function (c) { c.put(req, copy); });
+          }
+          return res;
+        })
+        .catch(function () {
+          return caches.match(req).then(function (hit) {
+            return hit || new Response("Offline", { status: 503, statusText: "Offline" });
+          });
+        })
+    );
+    return;
+  }
+
+  /* images / fonts / icons: cache first (ye badalte nahi) */
   e.respondWith(
     caches.match(req).then(function (hit) {
       if (hit) return hit;

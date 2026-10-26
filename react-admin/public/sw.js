@@ -1,11 +1,12 @@
 /* ==========================================
    4R-ADMIN (React)  |  Service Worker
-   - navigation : network first, cache fallback
-   - assets     : cache first, network fallback
+   - navigation     : network first, cache fallback
+   - code (js/css)  : network first, cache fallback
+                      (hashed /assets/* cache first - naam badal jaata hai)
    - firebase / telegram : never cache
    ========================================== */
 
-var VERSION = "4r-react-admin-v1";
+var VERSION = "4r-react-admin-v2";
 
 var SKIP = [
   "googleapis.com",
@@ -62,18 +63,40 @@ self.addEventListener("fetch", function (e) {
     return;
   }
 
+  var url = new URL(req.url);
+
+  function cached(res) {
+    if (res && res.status === 200 && res.type === "basic") {
+      var copy = res.clone();
+      caches.open(VERSION).then(function (c) { c.put(req, copy); });
+    }
+    return res;
+  }
+
+  /* Vite ke hashed bundle (/assets/index-XXXX.js) - naam hi badal jaata
+     hai, isliye cache first safe hai */
+  var hashed = /\/assets\//.test(url.pathname);
+
+  /* baaki code (js/firebase-config.js, css/style.css, manifest.json ...)
+     -> NETWORK FIRST, warna purana code cache me phans jaata hai */
+  if (!hashed && /\.(js|mjs|css|json|html?)(\?|$)/i.test(url.pathname)) {
+    e.respondWith(
+      fetch(req)
+        .then(cached)
+        .catch(function () {
+          return caches.match(req).then(function (hit) {
+            return hit || new Response("Offline", { status: 503, statusText: "Offline" });
+          });
+        })
+    );
+    return;
+  }
+
   /* static assets */
   e.respondWith(
     caches.match(req).then(function (hit) {
       if (hit) return hit;
-
-      return fetch(req).then(function (res) {
-        if (res && res.status === 200 && res.type === "basic") {
-          var copy = res.clone();
-          caches.open(VERSION).then(function (c) { c.put(req, copy); });
-        }
-        return res;
-      });
+      return fetch(req).then(cached);
     })
   );
 });

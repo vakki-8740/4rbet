@@ -112,6 +112,7 @@
         '<div class="diag-list"></div>' +
         '<div class="diag-btns">' +
           '<button type="button" class="btn btn--block diag-run">Dobara Check Karein</button>' +
+          '<a class="btn btn--ghost diag-rules" href="firestore.rules" target="_blank" rel="noopener" style="display:none">firestore.rules Kholein</a>' +
           '<button type="button" class="btn btn--ghost diag-copy">Report Copy</button>' +
         '</div>' +
       '</div>';
@@ -189,6 +190,10 @@
         'protocol: <b>' + esc(rep.protocol) + '</b> &middot; ' +
         'chatId: <b>' + esc(String(rep.chatId).slice(0, 6)) + '</b>' +
       '</div>';
+
+      /* rules ki problem ho to seedha rules file kholne ka shortcut */
+      var rulesBtn = box.querySelector(".diag-rules");
+      if (rulesBtn) rulesBtn.style.display = rep.why === "RULES" ? "" : "none";
 
       /* connection theek ho gaya to status bar bhi update */
       if (!bad.length) setState(true);
