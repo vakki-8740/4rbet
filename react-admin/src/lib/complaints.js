@@ -29,6 +29,9 @@ export const deleteComplaint = (id) => impl.deleteComplaint(id);
 export const deleteAll = () => impl.deleteAll();
 export const subscribe = (cb) => impl.subscribe(cb);
 
+/* cloud error text - Settings.jsx isi se "sync fail" batata hai */
+export const lastError = () => (MODE === "api" ? API.lastError() : FS.isOnline() ? "" : "Firestore connect nahi hua");
+
 /* API mode me extra: server health + stats (Home page ke liye handy) */
 export const stats = () => (MODE === "api" ? API.request("GET", "/admin/stats") : Promise.resolve({ ok: false }));
 export const overview = () => (MODE === "api" ? API.request("GET", "/admin/overview") : Promise.resolve({ ok: false }));

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getUI, saveUI, storageKB } from "../lib/admin.js";
-import { cacheRead, cacheWrite, deleteAll, isOnline, listComplaints } from "../lib/complaints.js";
-import { getLastError } from "../lib/fb.js";
+import { BACKEND, cacheRead, cacheWrite, deleteAll, isOnline, lastError as getLastError, listComplaints } from "../lib/complaints.js";
 import { useComplaints } from "../lib/useComplaints.js";
 import Shell from "../ui/Shell.jsx";
 import { useToast } from "../ui/Toast.jsx";
@@ -108,7 +107,9 @@ export default function Settings() {
     const l = await listComplaints();
     paintFirebase(l);
     btn.classList.remove("is-loading");
-    toast(getLastError() ? "Cloud error \u2014 rules check karein" : "Sync Done \u00b7 " + l.length + " complaints", !!getLastError());
+    toast(getLastError()
+        ? (BACKEND === "api" ? "API error \u2014 " + getLastError() : "Cloud error \u2014 rules check karein")
+        : "Sync Done \u00b7 " + l.length + " complaints", !!getLastError());
   };
 
   /* ---------------- Telegram ---------------- */
