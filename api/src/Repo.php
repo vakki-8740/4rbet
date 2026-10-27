@@ -847,6 +847,8 @@ final class Repo
                           : array('botToken' => '', 'chatId' => '', 'enabled' => false),
             'ui'       => isset($s['ui']) && is_array($s['ui']) ? $s['ui']
                           : array('showPassword' => false, 'splash' => true),
+            'drive'    => isset($s['drive']) && is_array($s['drive']) ? $s['drive']
+                          : array('mode' => 'off', 'folderId' => '', 'keep' => 14, 'autoHours' => 12),
         );
     }
 
@@ -863,6 +865,9 @@ final class Repo
             }
             if (!isset($s['ui']) || !is_array($s['ui'])) {
                 $s['ui'] = array('showPassword' => false, 'splash' => true);
+            }
+            if (!isset($s['drive']) || !is_array($s['drive'])) {
+                $s['drive'] = array('mode' => 'off', 'folderId' => '', 'keep' => 14, 'autoHours' => 12);
             }
 
             if (isset($patch['telegram']) && is_array($patch['telegram'])) {
@@ -885,6 +890,25 @@ final class Repo
                 }
                 if (array_key_exists('splash', $u)) {
                     $s['ui']['splash'] = !empty($u['splash']);
+                }
+            }
+
+            /* Drive: sirf non-secret fields. Credentials hamesha env (Wasmer
+               secrets) me rehte hain - JSON/repo me kabhi nahi. */
+            if (isset($patch['drive']) && is_array($patch['drive'])) {
+                $dv = $patch['drive'];
+                if (array_key_exists('mode', $dv)) {
+                    $m = V::str($dv['mode'], 10);
+                    $s['drive']['mode'] = in_array($m, array('off', 'backup', 'mirror', 'both'), true) ? $m : 'off';
+                }
+                if (array_key_exists('folderId', $dv)) {
+                    $s['drive']['folderId'] = V::str($dv['folderId'], 120);
+                }
+                if (array_key_exists('keep', $dv)) {
+                    $s['drive']['keep'] = max(1, min(100, (int) $dv['keep']));
+                }
+                if (array_key_exists('autoHours', $dv)) {
+                    $s['drive']['autoHours'] = max(1, min(720, (int) $dv['autoHours']));
                 }
             }
 

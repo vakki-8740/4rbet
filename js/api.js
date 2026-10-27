@@ -981,7 +981,23 @@
       if (file) fd.append("file", file, file.name || "file");
       return request("POST", "/admin/chats/" + encodeURIComponent(id) + "/messages", fd);
     },
-    deleteChat: deleteChat
+    deleteChat: deleteChat,
+
+    /* ---- Google Drive (backup + mirror) ---- */
+    drive: {
+      status: function () { return request("GET", "/admin/drive"); },
+      backup: function (label) { return request("POST", "/admin/drive/backup", { label: label || "manual" }); },
+      backups: function () { return request("GET", "/admin/drive/backups"); },
+      restore: function (id) { return request("POST", "/admin/drive/restore", { id: id, confirm: true }); },
+      test: function () { return request("POST", "/admin/drive/test"); },
+      makeFolder: function (name) { return request("POST", "/admin/drive/folder", { name: name || "4R-BET Backups" }); },
+      setMode: function (mode, folderId) {
+        var d = { mode: mode };
+        if (folderId) d.folderId = folderId;
+        return request("PUT", "/admin/settings", { drive: d });
+      },
+      cronUrl: function (key) { return url("/admin/drive/cron") + "?key=" + encodeURIComponent(key || ""); }
+    }
   };
 
   /* ==========================================================

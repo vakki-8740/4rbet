@@ -1,0 +1,33 @@
+4R BET — Google Drive Backup Folder
+====================================
+
+Ye folder 4R BET ke PHP API (Wasmer Edge) ka database backup rakhta hai.
+
+Database kahan hai?
+  Wasmer Edge ke volume par JSON files me:  /data/4rbet/*.json
+  (complaints, chats, messages, admins, settings)
+
+Yahan kya aayega?
+  4rbet-backup-YYYYmmdd-HHMMSS.json   -> poore database ka ek snapshot
+  (mode "mirror" ya "both" on ho to complaint/chat ki uploaded images bhi)
+
+Backup kaise hota hai?
+  1. Admin panel (React) -> Settings -> Google Drive Backup -> "Abhi Backup"
+  2. API call:  POST /api/admin/drive/backup        (Bearer admin token)
+  3. CLI:       php tools/install.php --backup
+  4. Cron:      GET  /api/admin/drive/cron?key=<CRON_KEY>   (roz automatic)
+
+Restore kaise karein?
+  Admin panel -> Settings -> Google Drive Backup -> Backups List -> Restore
+  ya:  POST /api/admin/drive/restore  {"id":"<fileId>","confirm":true}
+  ya:  php tools/install.php --restore=<fileId> --confirm
+  (Restore sirf .json files likhta hai — uploads/images ke liye mirror mode zaroori hai)
+
+Zaroori baatein
+  * Purane backups apne aap prune hote hain (default: last 14 rakhe jaate hain).
+  * Snapshot file ko browser me kholkar padh sakte ho — plain JSON hai.
+  * API ke paas is folder ka access OAuth refresh token se hai. Wo token
+    WASMER SECRET me hai (GDRIVE_REFRESH_TOKEN) — repo ya is folder me kahin nahi.
+  * Folder me manually files mat rakho; API isi folder me list/prune karti hai.
+
+Setup / troubleshooting: repo me api/README.md -> "Google Drive (backup + upload mirror)"

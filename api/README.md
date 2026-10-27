@@ -108,6 +108,7 @@ Read-modify-write hamesha `transaction()` ke andar karo.
 | DELETE | `/api/admin/chats/{id}` |
 | GET/PUT | `/api/admin/settings` |
 | POST | `/api/admin/telegram/test` · `/api/admin/telegram/flush` |
+| GET/POST | `/api/admin/drive` · `/drive/backup` · `/drive/backups` · `/drive/restore` · `/drive/test` · `/drive/folder` · `/drive/cron?key=` |
 
 Errors hamesha `{"ok":false,"error":"...","code":<status>}` shape me, sahi HTTP status ke saath.
 
@@ -140,6 +141,55 @@ document.addEventListener('visibilitychange', () => { /* tab hidden = pause */ }
 - `seq` har chat ka monotonic counter hai → duplicate/miss nahi hota
 - Tab hidden ho to polling pause (battery/data bachta hai)
 - Bheja message turant local render (optimistic), server `seq` milne par confirm
+
+### Google Drive (backup + upload mirror) — `src/Drive.php`
+
+Database JSON files volume par hoti hain. Drive integration se:
+
+- **backup** — saari JSON files ka ek snapshot (`4rbet-backup-YYYYmmdd-HHMMSS.json`) Drive par
+- **mirror** — har uploaded image/file Drive par bhi copy (`images[].driveId` record me save)
+- **restore** — kisi bhi backup se volume wapas bhar do
+
+Modes: `off` / `backup` / `mirror` / `both` — `GDRIVE_MODE` env se ya
+`PUT /api/admin/settings {"drive":{"mode":"both"}}` (React panel → Settings → Google Drive Backup).
+
+**Auth:** Wasmer ke PHP me `openssl` extension nahi hai, isliye service-account JWT (RS256)
+sign nahi ho sakta → default **OAuth2 refresh token** (sirf curl chahiye).
+(`openssl` available ho to service account path bhi kaam karta hai — code me dono hain.)
+
+Refresh token banane ka sabse aasaan tarika:
+
+1. console.cloud.google.com → project → **APIs & Services → Library** → *Google Drive API* enable
+2. **OAuth consent screen** → External → apna email test user me add
+3. **Credentials → Create credentials → OAuth client ID → Desktop app** → client id/secret copy
+4. https://developers.google.com/oauthplayground → gear icon → *Use your own OAuth credentials*
+5. Scope: `https://www.googleapis.com/auth/drive` (recommended) ya `…/auth/drive.file`
+   — `drive.file` me app sirf **apne banaye** files/folder dekh sakti hai, isliye tab
+   `GDRIVE_FOLDER_ID` khaali chhod dein (API apna folder bana legi)
+6. *Authorize APIs* → *Exchange authorization code for tokens* → **refresh_token** copy
+
+```bash
+wasmer app secrets create GDRIVE_REFRESH_TOKEN "1//0g..."
+wasmer app secrets create GDRIVE_CLIENT_ID     ".....apps.googleusercontent.com"
+wasmer app secrets create GDRIVE_CLIENT_SECRET "GOCSPX-....."
+wasmer app secrets create CRON_KEY             "$(openssl rand -hex 16)"
+```
+
+| Method | Path | Kaam |
+|---|---|---|
+| GET | `/api/admin/drive` | status: mode, creds, auth type, last backup, due?, disk |
+| POST | `/api/admin/drive/backup` | abhi backup lo (`{label}` optional), purane prune |
+| GET | `/api/admin/drive/backups` | Drive par maujood backups ki list |
+| POST | `/api/admin/drive/restore` | `{id, confirm:true}` → volume wapas bharo |
+| POST | `/api/admin/drive/test` | probe upload → download → delete → folder |
+| POST | `/api/admin/drive/folder` | `{name}` se naya folder banao |
+| GET | `/api/admin/drive/cron?key=<CRON_KEY>` | external cron ke liye (login nahi chahiye) |
+
+CLI: `php tools/install.php --drive-test | --backup | --backups | --restore=<id> --confirm`
+
+> Restore sirf `.json` files likhta hai — uploads (images) nahi. Images bachane ke liye
+> `mirror` ya `both` mode rakhein.
+> Credentials sirf **env** me hain — settings.json/repo me kabhi nahi jaate.
 
 ---
 

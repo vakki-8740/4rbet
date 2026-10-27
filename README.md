@@ -38,10 +38,29 @@ Detail: [`api/README.md`](api/README.md)
    - `env.ALLOWED_ORIGINS: https://<aapka-vercel-domain>` (comma separated, multiple ok)
 2. **`vercel.json`** → `rewrites[0].destination`:
    `https://4rbet-api-YOUR_WASMER_USERNAME.wasmer.app/api/:path*`
-3. **Wasmer secret** (token signing key — file me kabhi mat likhna):
+3. **Wasmer secrets** (file me kabhi mat likhna):
    ```bash
-   wasmer app secrets create APP_KEY "$(openssl rand -hex 32)"
+   wasmer app secrets create APP_KEY              "$(openssl rand -hex 32)"
+   wasmer app secrets create CRON_KEY             "$(openssl rand -hex 16)"
+   # Google Drive backup chahiye to (steps: api/README.md -> Google Drive section)
+   wasmer app secrets create GDRIVE_REFRESH_TOKEN "1//0g..."
+   wasmer app secrets create GDRIVE_CLIENT_ID     ".....apps.googleusercontent.com"
+   wasmer app secrets create GDRIVE_CLIENT_SECRET "GOCSPX-....."
    ```
+
+### Google Drive backup (optional, par recommended)
+
+Database JSON files Wasmer ke volume par hoti hain — Drive par backup rakhne se data kabhi
+khota nahi, aur app kisi dusre region/account me bhi restore ho jaati hai.
+Backup folder aapke Drive me ready hai:
+**[4R-BET Backups](https://drive.google.com/drive/folders/1-3gjSRjFRJ7yG80WzPJwmVMc7qchN4gk)**
+(id `api/app.yaml` → `GDRIVE_FOLDER_ID` me daal diya gaya hai)
+
+- Mode: `off` / `backup` / `mirror` / `both` — React panel → **Settings → Google Drive Backup**
+- Turant backup: `POST /api/admin/drive/backup` (ya `php tools/install.php --backup`)
+- Restore: `POST /api/admin/drive/restore {id, confirm:true}`
+- Roz automatic: cron-job.org / GitHub Actions se
+  `GET /api/admin/drive/cron?key=<CRON_KEY>`
 
 ### Backend (Wasmer)
 ```bash

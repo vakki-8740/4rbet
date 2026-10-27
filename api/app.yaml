@@ -24,8 +24,23 @@ env:
   ALLOWED_ORIGINS: "https://4rbet.vercel.app,http://localhost:8080,http://127.0.0.1:8080"
   # Upload public URL base (file links isi se bante hain)
   PUBLIC_BASE_URL: "https://4rbet-api-YOUR_WASMER_USERNAME.wasmer.app"
-  # APP_KEY secret hai - yahan NAHI likhna. Set karein:
+  # ---- Google Drive (backup + upload mirror) ----
+  # Folder "4R-BET Backups" aapke Drive me bana hua hai:
+  #   https://drive.google.com/drive/folders/1-3gjSRjFRJ7yG80WzPJwmVMc7qchN4gk
+  # Dhyan dein: isi folder ko use karne ke liye OAuth scope
+  #   https://www.googleapis.com/auth/drive   (full) chahiye.
+  # Sirf "drive.file" scope use karna ho to ise KHAALI ("") chhod dein -
+  # tab API apna folder khud bana legi (usme likhne ki permission hoti hai).
+  GDRIVE_FOLDER_ID: "1-3gjSRjFRJ7yG80WzPJwmVMc7qchN4gk"
+  # mode: off | backup | mirror | both  (settings.json se bhi badal sakta hai)
+  GDRIVE_MODE: "backup"
+
+  # ---- SECRETS (yahan values NAHI likhni) ----
   #   wasmer app secrets create APP_KEY "$(openssl rand -hex 32)"
+  #   wasmer app secrets create GDRIVE_REFRESH_TOKEN "1//0..."
+  #   wasmer app secrets create GDRIVE_CLIENT_ID ".....apps.googleusercontent.com"
+  #   wasmer app secrets create GDRIVE_CLIENT_SECRET "GOCSPX-....."
+  #   wasmer app secrets create CRON_KEY "$(openssl rand -hex 16)"
   # Ya dashboard -> app -> Settings -> Environment Vars
 
 # ---- volume: JSON "database" ki disk ----

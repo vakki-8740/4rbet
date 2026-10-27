@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getUI, saveUI, storageKB } from "../lib/admin.js";
 import { BACKEND, cacheRead, cacheWrite, deleteAll, isOnline, lastError as getLastError, listComplaints } from "../lib/complaints.js";
 import { useComplaints } from "../lib/useComplaints.js";
+import * as Drive from "../lib/drive.js";
 import Shell from "../ui/Shell.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import { IconBack, IconDown } from "../ui/icons.jsx";
@@ -192,6 +193,77 @@ export default function Settings() {
         setTestBusy(false);
         paintTelegram();
       });
+  };
+
+  /* ---------------- Google Drive ---------------- */
+  const [dv, setDv] = useState(null);
+  const [dvBusy, setDvBusy] = useState("");
+  const [dvList, setDvList] = useState([]);
+  const [dvMode, setDvMode] = useState("off");
+
+  const loadDrive = () => {
+    if (!Drive.SUPPORTED) return;
+    Drive.status().then((res) => {
+      if (res.ok && res.data) {
+        const d = res.data.drive || {};
+        setDv(res.data);
+        setDvMode(d.mode || "off");
+      } else {
+        setDv({ ok: false, error: (res && res.error) || "Drive status nahi mila" });
+      }
+    });
+  };
+
+  useEffect(() => {
+    loadDrive();
+  }, []);
+
+  const saveDvMode = () => {
+    setDvBusy("mode");
+    Drive.setMode(dvMode).then((res) => {
+      setDvBusy("");
+      if (res.ok) { toast("Drive mode: " + dvMode); loadDrive(); }
+      else toast(res.error || "Mode save nahi hua", true);
+    });
+  };
+
+  const runBackup = () => {
+    setDvBusy("backup");
+    Drive.backup("panel").then((res) => {
+      setDvBusy("");
+      if (res.ok) toast("Backup Drive par chala gaya · " + Math.round((res.bytes || 0) / 1024) + " KB");
+      else toast(res.error || "Backup fail", true);
+      loadDrive();
+    });
+  };
+
+  const runTest = () => {
+    setDvBusy("test");
+    Drive.test().then((res) => {
+      setDvBusy("");
+      const steps = (res.data && res.data.steps) || [];
+      const bad = steps.filter((x) => !x.ok);
+      toast(bad.length ? "Drive test fail: " + (bad[0].error || bad[0].name) : "Drive test PASS");
+    });
+  };
+
+  const loadList = () => {
+    setDvBusy("list");
+    Drive.backups().then((res) => {
+      setDvBusy("");
+      setDvList((res.data && res.data.items) || []);
+      if (!res.ok) toast(res.error || "List nahi mili", true);
+    });
+  };
+
+  const runRestore = (id, name) => {
+    if (!window.confirm("Backup \"" + (name || id) + "\" se restore karein?\nSaara current data overwrite ho jaayega.")) return;
+    setDvBusy("restore");
+    Drive.restore(id).then((res) => {
+      setDvBusy("");
+      if (res.ok) toast("Restore done · " + res.written + " files");
+      else toast(res.error || "Restore fail", true);
+    });
   };
 
   /* ---------------- Preferences ---------------- */
@@ -532,6 +604,95 @@ export default function Settings() {
             </p>
           </div>
         </section>
+
+        {/* GOOGLE DRIVE */}
+        {Drive.SUPPORTED && (
+          <section className="adm-box" style={{ marginBottom: 14 }}>
+            <div className="adm-box-head">
+              <h2>Google Drive Backup</h2>
+              <span style={{ color: dv && dv.drive && dv.drive.enabled ? "#157a4d" : "#c2740a" }}>
+                {dv && dv.drive ? dv.drive.mode.toUpperCase() : "…"}
+              </span>
+            </div>
+
+            <div className="adm-hint">
+              <b>Kyun:</b> database JSON files Wasmer ke volume par hoti hain. Drive backup se data
+              kabhi khota nahi — app dusre region/account me bhi restore ho jaati hai.
+              <br />
+              <b>Credentials sirf server (Wasmer secrets) me hain</b> — panel me token dikhta hi nahi:
+              <code>GDRIVE_REFRESH_TOKEN</code>, <code>GDRIVE_CLIENT_ID</code>, <code>GDRIVE_CLIENT_SECRET</code>.
+            </div>
+
+            {dv && dv.error && <p className="adm-note">{dv.error}</p>}
+
+            {dv && dv.drive && (
+              <div className="adm-form">
+                <div className="field">
+                  <label className="label" htmlFor="dvMode">Mode</label>
+                  <select id="dvMode" value={dvMode} onChange={(e) => setDvMode(e.target.value)}>
+                    <option value="off">off — kuch mat karo</option>
+                    <option value="backup">backup — JSON database ka snapshot</option>
+                    <option value="mirror">mirror — har upload Drive par bhi</option>
+                    <option value="both">both — backup + mirror</option>
+                  </select>
+                </div>
+
+                <div className="adm-btn-row">
+                  <button type="button" className="btn btn--block" onClick={saveDvMode} disabled={dvBusy === "mode"}>
+                    <span className="btn-text">Mode Save</span>
+                  </button>
+                  <button type="button" className="btn btn--ghost" onClick={runBackup} disabled={dvBusy === "backup"}>
+                    {dvBusy === "backup" ? "Backup…" : "Abhi Backup"}
+                  </button>
+                </div>
+
+                <div className="adm-btn-row">
+                  <button type="button" className="btn btn--ghost" onClick={runTest} disabled={dvBusy === "test"}>
+                    Test
+                  </button>
+                  <button type="button" className="btn btn--ghost" onClick={loadList} disabled={dvBusy === "list"}>
+                    Backups List
+                  </button>
+                </div>
+
+                <p className="adm-note" style={{ border: "1px solid var(--line)", borderRadius: 8 }}>
+                  creds: <b>{dv.drive.credsReady ? "ready (" + dv.drive.auth + ")" : "MISSING"}</b>
+                  {" · "}folder: <b>{dv.drive.folderSet ? "set" : "auto-banega"}</b>
+                  {" · "}last backup: <b>{dv.drive.lastBackupAt || "never"}</b>
+                  {dv.backupDue && dv.backupDue.due ? " · **BACKUP DUE**" : ""}
+                  {dv.drive.lastError ? " · error: " + dv.drive.lastError : ""}
+                </p>
+
+                {dvList.length > 0 && (
+                  <div className="adm-list">
+                    {dvList.map((b) => (
+                      <div className="adm-set-row" key={b.id}>
+                        <span className="adm-row-k">
+                          {b.name}
+                          <small>{String(b.createdTime || "").slice(0, 19).replace("T", " ")} · {Math.round((Number(b.size) || 0) / 1024)} KB</small>
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          disabled={dvBusy === "restore"}
+                          onClick={() => runRestore(b.id, b.name)}
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="adm-note">
+                  Roz automatic backup chahiye to kisi cron (cron-job.org / GitHub Actions) se ye URL hit karein:
+                  <br />
+                  <code>/api/admin/drive/cron?key=CRON_KEY</code>
+                </p>
+              </div>
+            )}
+          </section>
+        )}
 
         <section className="adm-box adm-danger">
           <div className="adm-box-head">
