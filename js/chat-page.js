@@ -11,7 +11,8 @@
   var form = document.getElementById("chatForm");
   if (!form) return;
 
-  var C = window.FourRChat;
+  /* backend: PHP API (js/api.js) ya purana Firestore (js/chat-db.js) */
+  var C = (window.FourRBackend === "api" && window.FourRApi) ? window.FourRApi : window.FourRChat;
   if (!C) return;
 
   var box     = document.getElementById("chatMessages");

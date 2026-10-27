@@ -1,81 +1,28 @@
-import { FB, getAuth, ADMIN_EMAIL } from "./fb.js";
+/* ==========================================================
+   4R BET  |  lib/auth.js  —  FACADE
+   ----------------------------------------------------------
+   MODE === "api"       -> lib/api.js            (bcrypt + HMAC token, admins.json)
+   MODE === "firebase"  -> lib/auth-firestore.js (Firebase Auth)
 
-export { ADMIN_EMAIL };
+   Zaroori farq: API mode me **auto-signup nahi hai**. Purana
+   Firebase flow galat password par naya account bana deta tha
+   (isi se panel ka guard kamzor padta tha). Yahan admin sirf
+   server par pehle se maujood ho, ya pehli baar install ho.
+   ========================================================== */
 
-function friendly(code, msg) {
-  switch (code) {
-    case "auth/configuration-not-found":
-    case "auth/operation-not-allowed":
-      return (
-        "Login abhi band hai. Firebase Console > Authentication > " +
-        'Sign-in method me "Email/Password" ON karke wapas aayein.'
-      );
-    case "auth/user-not-found":
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-    case "auth/invalid-login-credentials":
-      return "Email ya password galat hai.";
-    case "auth/email-already-in-use":
-      return "Ye email pehle se registered hai. Apna password daalein.";
-    case "auth/invalid-email":
-      return "Email sahi nahi hai.";
-    case "auth/weak-password":
-      return "Password kam se kam 6 characters ka rakhein.";
-    case "auth/too-many-requests":
-      return "Bahut zyada try kiye gaye. Thodi der baad koshish karein.";
-    case "auth/network-request-failed":
-      return "Internet nahi hai. Connection check karein.";
-    case "auth/api-key-not-valid":
-      return "Firebase API key sahi nahi hai (firebase-config.js dekhein).";
-  }
-  return msg || "Login nahi hua. Dobara koshish karein.";
-}
+import { MODE } from "./api.js";
+import * as API from "./api.js";
+import * as FS from "./auth-firestore.js";
 
-function keepSignedIn(A) {
-  try {
-    return A.setPersistence(FB.auth.Auth.Persistence.LOCAL)
-      .then(() => true)
-      .catch(() => false);
-  } catch (e) {
-    return Promise.resolve(false);
-  }
-}
+const impl = MODE === "api" ? API : FS;
 
-export function signIn(mail, pass) {
-  const A = getAuth();
+export const BACKEND = MODE;
+export const ADMIN_EMAIL = MODE === "api" ? API.ADMIN_EMAIL : FS.ADMIN_EMAIL;
 
-  return keepSignedIn(A)
-    .then(() => A.signInWithEmailAndPassword(mail, pass))
-    .catch((err) => {
-      const code = err && err.code;
-      const m = err && err.message ? " (" + err.message + ")" : "";
+export const signIn = (mail, pass) => impl.signIn(mail, pass);
+export const signOut = () => impl.signOut();
+export const onAuth = (cb) => impl.onAuth(cb);
 
-      if (
-        code === "auth/user-not-found" ||
-        code === "auth/invalid-credential" ||
-        code === "auth/wrong-password"
-      ) {
-        return A.createUserWithEmailAndPassword(mail, pass)
-          .then((res) => ({ user: res.user, created: true }))
-          .catch((e2) => {
-            throw new Error(
-              friendly(e2 && e2.code, e2 && e2.message) +
-                (e2 && e2.code ? " [" + e2.code + "]" : "")
-            );
-          });
-      }
-
-      throw new Error(friendly(code, err && err.message) + m);
-    });
-}
-
-export function signOut() {
-  const A = getAuth();
-  return A.signOut();
-}
-
-export function onAuth(cb) {
-  const A = getAuth();
-  keepSignedIn(A);
-  return A.onAuthStateChanged(cb);
-}
+/* API mode me session token/profile (debug + Shell ke liye) */
+export const token = () => (MODE === "api" ? API.getToken() : "");
+export const profile = () => (MODE === "api" ? API.getProfile() : null);

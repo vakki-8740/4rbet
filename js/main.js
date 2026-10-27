@@ -204,7 +204,8 @@
 
   /* Firebase upar se load hota hai; agar load nahi hua ya
      rules allow nahi kar rahi to localStorage wala backup chalta hai. */
-  var DB = window.FourR;
+  /* backend: PHP API (js/api.js) ya purana Firestore (js/firebase-db.js) */
+  var DB = (window.FourRBackend === "api" && window.FourRApiDb) ? window.FourRApiDb : window.FourR;
 
   function readStore() {
     if (DB) return DB.cacheRead();
@@ -602,7 +603,10 @@
         var saved  = addComplaint(record);
 
         /* ---------- Telegram alert (background me - user ko wait nahi karna padta) ---------- */
-        if (window.FourRTelegram) {
+        /* API mode me alert SERVER bhejta hai (token browser me nahi) */
+        if (window.FourRBackend === "api") {
+          console.info("Telegram alert API server se gaya.");
+        } else if (window.FourRTelegram) {
           window.FourRTelegram.notifyComplaint(record).then(function (res) {
             if (res && res.skipped) {
               console.info("Telegram alert off hai - Admin Panel > Settings me bot token aur chat id set karein.");

@@ -107,10 +107,22 @@ $router->post('/api/complaints', function (array $p) use ($req, $resp, $repo, $t
         60
     );
     $data = isset($j['data']) && is_array($j['data']) ? $j['data'] : array();
+
+    /* multipart se aaya ho to form field "data" JSON string hota hai */
     if (!$data) {
-        /* multipart fallback: saare non-file fields = data */
+        $rawData = (string) $req->field('data');
+        if ($rawData !== '') {
+            $dec = json_decode($rawData, true);
+            if (is_array($dec)) {
+                $data = $dec;
+            }
+        }
+    }
+
+    if (!$data) {
+        /* aakhri fallback: saare non-file fields = data */
         foreach ($req->fields() as $k => $v) {
-            if ($k === 'category' || $k === 'deviceId' || $k === 'chatId') {
+            if ($k === 'category' || $k === 'deviceId' || $k === 'chatId' || $k === 'data') {
                 continue;
             }
             $data[$k] = $v;

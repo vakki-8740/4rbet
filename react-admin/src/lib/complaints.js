@@ -1,169 +1,34 @@
-import { getDb, setLastError } from "./fb.js";
+/* ==========================================================
+   4R BET  |  lib/complaints.js  —  FACADE
+   ----------------------------------------------------------
+   MODE === "api"       -> lib/api.js                  (PHP + JSON file DB)
+   MODE === "firebase"  -> lib/complaints-firestore.js (purana Firestore)
+   ========================================================== */
 
-export const CACHE_KEY = "4rbet_complaints";
-export const COL = window.FIREBASE_COLLECTION || "complaints";
+import { MODE } from "./api.js";
+import * as API from "./api.js";
+import * as FS from "./complaints-firestore.js";
 
-export function cacheRead() {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
+const impl = MODE === "api" ? API : FS;
 
-export function cacheWrite(list) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(list));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+export const BACKEND = MODE;
+export const CACHE_KEY = MODE === "api" ? "4rbet_complaints" : FS.CACHE_KEY;
+export const COL = MODE === "api" ? "complaints (json)" : FS.COL;
 
-export function cacheUpdate(id, patch) {
-  const list = cacheRead();
-  list.forEach((r) => {
-    if (r.id === id) Object.assign(r, patch);
-  });
-  cacheWrite(list);
-  return list;
-}
+/* ---- local cache (offline bhi panel khulta hai) ---- */
+export const cacheRead = () => impl.cacheRead();
+export const cacheWrite = (list) => impl.cacheWrite(list);
+export const cacheUpdate = (id, patch) => impl.cacheUpdate(id, patch);
+export const cacheRemove = (id) => impl.cacheRemove(id);
 
-export function cacheRemove(id) {
-  const list = cacheRead().filter((r) => r.id !== id);
-  cacheWrite(list);
-  return list;
-}
+/* ---- cloud ---- */
+export const isOnline = () => impl.isOnline();
+export const listComplaints = () => impl.listComplaints();
+export const updateStatus = (id, status, statusAt) => impl.updateStatus(id, status, statusAt);
+export const deleteComplaint = (id) => impl.deleteComplaint(id);
+export const deleteAll = () => impl.deleteAll();
+export const subscribe = (cb) => impl.subscribe(cb);
 
-function emit() {
-  try {
-    window.dispatchEvent(new CustomEvent("4r-sync"));
-  } catch (e) {
-    /* old browser */
-  }
-}
-
-function db() {
-  try {
-    return getDb();
-  } catch (e) {
-    setLastError(e);
-    return null;
-  }
-}
-
-export function isOnline() {
-  return !!db();
-}
-
-export function listComplaints() {
-  const D = db();
-  if (!D) return Promise.resolve(cacheRead());
-
-  return D.collection(COL)
-    .orderBy("submittedAt", "desc")
-    .get()
-    .then((snap) => {
-      const list = snap.docs.map((d) => {
-        const o = d.data() || {};
-        o.id = o.id || d.id;
-        return o;
-      });
-      cacheWrite(list);
-      emit();
-      return list;
-    })
-    .catch((err) => {
-      setLastError(err);
-      return cacheRead();
-    });
-}
-
-export function updateStatus(id, status, statusAt) {
-  const at = statusAt || new Date().toISOString();
-  cacheUpdate(id, { status, statusAt: at });
-  emit();
-
-  const D = db();
-  if (!D) return Promise.resolve({ ok: false, offline: true });
-
-  return D.collection(COL)
-    .doc(id)
-    .update({ status, statusAt: at })
-    .then(() => ({ ok: true, offline: false }))
-    .catch((err) => {
-      setLastError(err);
-      return { ok: false, offline: true, error: err.message };
-    });
-}
-
-export function deleteComplaint(id) {
-  cacheRemove(id);
-  emit();
-
-  const D = db();
-  if (!D) return Promise.resolve({ ok: false, offline: true });
-
-  return D.collection(COL)
-    .doc(id)
-    .delete()
-    .then(() => ({ ok: true, offline: false }))
-    .catch((err) => {
-      setLastError(err);
-      return { ok: false, offline: true, error: err.message };
-    });
-}
-
-export function deleteAll() {
-  const D = db();
-  if (!D) {
-    cacheWrite([]);
-    emit();
-    return Promise.resolve({ ok: false, offline: true });
-  }
-
-  return D.collection(COL)
-    .get()
-    .then((snap) => {
-      const batch = D.batch();
-      snap.docs.forEach((d) => batch.delete(d.ref));
-      return batch.commit();
-    })
-    .then(() => {
-      cacheWrite([]);
-      emit();
-      return { ok: true, offline: false };
-    })
-    .catch((err) => {
-      setLastError(err);
-      return { ok: false, offline: true, error: err.message };
-    });
-}
-
-export function subscribe(cb) {
-  const D = db();
-  if (!D) return () => {};
-
-  try {
-    return D.collection(COL)
-      .orderBy("submittedAt", "desc")
-      .onSnapshot(
-        (snap) => {
-          const list = snap.docs.map((d) => {
-            const o = d.data() || {};
-            o.id = o.id || d.id;
-            return o;
-          });
-          cacheWrite(list);
-          cb(list, true);
-        },
-        (err) => {
-          setLastError(err);
-          cb(cacheRead(), false);
-        }
-      );
-  } catch (e) {
-    return () => {};
-  }
-}
+/* API mode me extra: server health + stats (Home page ke liye handy) */
+export const stats = () => (MODE === "api" ? API.request("GET", "/admin/stats") : Promise.resolve({ ok: false }));
+export const overview = () => (MODE === "api" ? API.request("GET", "/admin/overview") : Promise.resolve({ ok: false }));
