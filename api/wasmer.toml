@@ -1,0 +1,28 @@
+[package]
+name = "vakki-8740/4rbet-api"
+version = "1.0.0"
+description = "4R BET support API - PHP 8.3 + JSON-file database (Wasmer Edge)"
+license = "UNLICENSED"
+repository = "https://github.com/vakki-8740/4rbet"
+
+[[command]]
+name = "run"
+module = "php/php:php"
+runner = "wasi"
+# front controller: /app/public/index.php  (router.php static files handle karta hai)
+main-args = ["-S", "localhost:8080", "-t", "/app/public", "/app/public/router.php"]
+
+[command.annotations.wasi]
+# php.ini is folder se uthega
+env = [
+  "PHPRC=/config/",
+  # local dev defaults (Edge par app.yaml ke env override karte hain)
+  "APP_ENV=development",
+  "DATA_DIR=/data/4rbet",
+  "ALLOWED_ORIGINS=*",
+  "PUBLIC_BASE_URL=http://localhost:8080",
+]
+
+[fs]
+"/app" = "."
+"/config" = "config"

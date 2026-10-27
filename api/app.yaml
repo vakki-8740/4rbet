@@ -1,0 +1,53 @@
+kind: wasmer.io/App.v0
+# ==================================================================
+# 4R BET API - Wasmer Edge app config
+#
+# Deploy:  cd api && wasmer deploy
+# URL:     https://4rbet-api-<USERNAME>.wasmer.app
+#
+# "owner" me apna Wasmer username daalein (ya `wasmer deploy` bolne par
+# CLI khud current user se infer kar leta hai - tab is line ko comment
+# kar sakte hain).
+# ==================================================================
+owner: YOUR_WASMER_USERNAME
+name: 4rbet-api
+
+# package = is folder ka wasmer.toml (php module)
+package: .
+
+# ---- env (Edge par inject hote hain) ----
+env:
+  APP_ENV: production
+  # JSON database yahan rahegi - MUST be volume ke andar (sirf /data writable hai)
+  DATA_DIR: /data/4rbet
+  # Frontend Vercel par hai -> CORS me sirf yahi origins allow
+  ALLOWED_ORIGINS: "https://4rbet.vercel.app,http://localhost:8080,http://127.0.0.1:8080"
+  # Upload public URL base (file links isi se bante hain)
+  PUBLIC_BASE_URL: "https://4rbet-api-YOUR_WASMER_USERNAME.wasmer.app"
+  # APP_KEY secret hai - yahan NAHI likhna. Set karein:
+  #   wasmer app secrets create APP_KEY "$(openssl rand -hex 32)"
+  # Ya dashboard -> app -> Settings -> Environment Vars
+
+# ---- volume: JSON "database" ki disk ----
+volumes:
+  - name: 4rbet-data
+    mount: /data
+
+# ---- scaling ----
+# JSON files par single writer safe rehta hai, isliye ek hi instance.
+# (Wasmer docs: volumes multi-writer DB ke liye ideal nahi - isliye
+#  JsonStore me flock + atomic rename + .bak recovery hai.)
+scaling:
+  mode: single_concurrency
+
+# ---- cold start kam karne ke liye ----
+capabilities:
+  instaboot:
+    requests:
+      - path: /api/health
+
+redirect:
+  force_https: true
+
+# NOTE: capabilities.database jaan-boojh kar NAHI lagaya -
+# database JSON file me hai (aapka decision), managed SQL me nahi.
