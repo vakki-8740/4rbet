@@ -10,7 +10,7 @@
      hamesha seedha network (data stale nahi hona chahiye)
    ========================================== */
 
-var VERSION = "4r-admin-v4";
+var VERSION = "4r-admin-v5";
 var SHELL = [
   "./",
   "index.html",
@@ -27,6 +27,9 @@ var SHELL = [
   "js/firebase-config.js",
   "js/firebase-db.js",
   "../js/chat-db.js",
+  "../js/api-config.js",
+  "../js/api.js",
+  "js/auth-api.js",
   "js/telegram.js",
   "manifest.json",
   "FAVICON/admin-logo-photo_2026-10-01_23-26-57.jpg",

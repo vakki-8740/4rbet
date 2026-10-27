@@ -857,7 +857,10 @@
   }
 
   function listComplaints() {
-    return request("GET", "/complaints/mine?limit=200").then(function (res) {
+    /* admin token ho to saari complaints, warna sirf is device ki */
+    var path = token() ? "/admin/complaints?limit=500" : "/complaints/mine?limit=200";
+
+    return request("GET", path).then(function (res) {
       if (!res.ok) {
         /* offline/cache fallback - purana behaviour */
         return cacheRead();
@@ -869,11 +872,11 @@
     });
   }
 
-  function updateStatus(id, status) {
+  function updateStatus(id, status, statusAt) {
     return request("PATCH", "/admin/complaints/" + encodeURIComponent(id), { status: status })
       .then(function (res) {
         if (!res.ok) return { ok: false, error: res.error };
-        cacheUpdate(id, { status: status });
+        cacheUpdate(id, { status: status, statusAt: statusAt || new Date().toISOString() });
         return { ok: true };
       });
   }
@@ -982,6 +985,108 @@
   };
 
   /* ==========================================================
+     TELEGRAM shim
+     ----------------------------------------------------------
+     Admin panel (4R-ADMIN/settings.html) window.FourRTelegram
+     use karta hai. API mode me alerts SERVER bhejta hai, isliye
+     ye shim settings ko /api/admin/settings se jodta hai -
+     bot token ab browser me nahi, volume par rehta hai.
+     ========================================================== */
+
+  var tgCache = { botToken: "", chatId: "", enabled: false, queueLen: 0, loaded: false };
+  var tgSubs = [];
+
+  function tgNotifySubs() {
+    for (var i = 0; i < tgSubs.length; i++) {
+      try { tgSubs[i](tgCache); } catch (e) {}
+    }
+  }
+
+  function loadTelegramSettings() {
+    if (!token()) return Promise.resolve(tgCache);
+    return request("GET", "/admin/settings").then(function (res) {
+      if (res.ok && res.data && res.data.telegram) {
+        for (var k in res.data.telegram) tgCache[k] = res.data.telegram[k];
+        tgCache.loaded = true;
+        tgNotifySubs();
+      }
+      return tgCache;
+    });
+  }
+
+  var Telegram = {
+    MODE: "api",
+    getSettings: function () {
+      return {
+        botToken: tgCache.botToken || "",
+        chatId: tgCache.chatId || "",
+        enabled: !!tgCache.enabled
+      };
+    },
+    saveSettings: function (patch) {
+      patch = patch || {};
+      for (var k in patch) tgCache[k] = patch[k];
+      tgNotifySubs();
+
+      request("PUT", "/admin/settings", { telegram: patch }).then(function (res) {
+        if (res.ok && res.data && res.data.settings && res.data.settings.telegram) {
+          var t = res.data.settings.telegram;
+          for (var k2 in t) tgCache[k2] = t[k2];
+          tgNotifySubs();
+        }
+      });
+      return true;
+    },
+    isReady: function () { return !!(tgCache.botToken && tgCache.chatId); },
+    buildMessage: function (rec) {
+      return "New Complaint - 4R BET\n" + JSON.stringify((rec && rec.data) || rec || {}, null, 2);
+    },
+    sendText: function (text) {
+      return request("POST", "/admin/telegram/test", { text: String(text || "") }).then(function (res) {
+        if (!res.ok) throw new Error(res.error || "Telegram test fail");
+        if (res.data && res.data.send && res.data.send.sent) tgCache.queueLen = 0;
+        return res.data;
+      });
+    },
+    /* complaint create hote hi SERVER alert bhejta hai - browser se kuch nahi */
+    notifyComplaint: function () {
+      return Promise.resolve({ ok: true, skipped: true, server: true });
+    },
+    flushQueue: function () {
+      return request("POST", "/admin/telegram/flush").then(function (res) {
+        var d = res.data || {};
+        tgCache.queueLen = d.left || 0;
+        return d.sent || 0;
+      });
+    },
+    queueSize: function () { return Number(tgCache.queueLen || 0); },
+    status: function () {
+      return request("GET", "/health").then(function (res) {
+        var tg = (res.data && res.data.telegram) || {};
+        tgCache.queueLen = tg.queueLen || 0;
+        if (tg.enabled !== undefined) tgCache.enabled = !!tg.enabled;
+        return tg;
+      });
+    },
+    reload: loadTelegramSettings,
+    onChange: function (cb) {
+      tgSubs.push(cb);
+      return function () {
+        tgSubs = tgSubs.filter(function (f) { return f !== cb; });
+      };
+    }
+  };
+
+  /* API mode me browser-side telegram (js/telegram.js) ko replace karo.
+     Ye script uske baad load hoti hai, isliye shim jeetta hai. */
+  if (MODE === "api") {
+    window.FourRTelegram = Telegram;
+    window.FourRApiMode = true;
+    window.FourRApiBase = BASE;
+    loadTelegramSettings();
+  }
+
+  /* ==========================================================
      EXPORTS
      ========================================================== */
 
@@ -1023,14 +1128,17 @@
     readImage: readImage,
     readFile: readFile,
 
+    telegram: Telegram,
     admin: Admin
   };
 
   var Db = {
     MODE: MODE,
     BASE: BASE,
+    COL: "complaints (json-api)",
     init: init,
     isOnline: isOnline,
+    health: function () { return request("GET", "/health"); },
     lastError: function () { return state.lastError; },
     why: why,
     reason: reason,

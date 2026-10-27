@@ -8,7 +8,8 @@
 window.AdminChat = (function () {
   "use strict";
 
-  var C = window.FourRChat;
+  /* backend: PHP API (../js/api.js) ya purana Firestore (../js/chat-db.js) */
+  var C = (window.FourRBackend === "api" && window.FourRApi) ? window.FourRApi : window.FourRChat;
 
   var AVATAR = "USER-ICON/2288510.png";
   var ADMIN_NAME = "4R Support";

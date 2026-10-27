@@ -523,7 +523,15 @@ $router->post('/api/admin/telegram/test', function (array $p) use ($req, $resp, 
         return $resp->json(array('ok' => false) + $me, 502);
     }
 
-    $sent = $telegram->send("4R BET API test alert - sab theek hai.\n" . $telegram->status()['queueLen'] . " pending queue.");
+    /* panel apna test text bhej sakta hai (settings page wala message) */
+    $j = $req->json();
+    $custom = is_array($j) && isset($j['text']) ? V::str($j['text'], 3500) : '';
+    $st = $telegram->status();
+    $text = $custom !== ''
+        ? $custom
+        : "4R BET API test alert - sab theek hai.\n" . (int) $st['queueLen'] . " pending queue.";
+
+    $sent = $telegram->send($text);
 
     return $resp->json(array('ok' => true, 'bot' => $me['bot'], 'send' => $sent));
 });

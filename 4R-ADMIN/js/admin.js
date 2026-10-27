@@ -145,7 +145,8 @@ window.AdminPanel = (function () {
      Firestore = main, localStorage = offline cache
      ========================================== */
 
-  var DB = window.FourR;
+  /* backend: PHP API (../js/api.js) ya purana Firestore (js/firebase-db.js) */
+  var DB = (window.FourRBackend === "api" && window.FourRApiDb) ? window.FourRApiDb : window.FourR;
 
   function load() {
     if (DB) return DB.cacheRead();
