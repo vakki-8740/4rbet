@@ -65,41 +65,94 @@
     });
   });
 
-  /* ---------- Menu button ---------- */
-  var menuBtn  = document.getElementById("menuBtn");
-  var menuDrop = document.getElementById("menuDrop");
+  /* ---------- LEFT SIDE DRAWER MENU ----------
+     Menu button tap -> poora menu left side se slide hoke aata hai.
+     Band karne ke 4 tarike: close (X), backdrop tap, Escape, koi link. */
+
+  var menuBtn      = document.getElementById("menuBtn");
+  var menuDrop     = document.getElementById("menuDrop");
+  var menuCloseBtn = document.getElementById("menuClose");
+  var menuBackdrop = null;
 
   if (menuBtn && menuDrop) {
+
+    /* Drawer ko body ke andar le jate hain, warna header ke
+       stacking context (z-index: 100) me reh kar backdrop usko dhak deta hai. */
+    document.body.appendChild(menuDrop);
+
+    menuBackdrop = document.createElement("div");
+    menuBackdrop.className = "menu-backdrop";
+    menuBackdrop.setAttribute("aria-hidden", "true");
+    document.body.appendChild(menuBackdrop);
+
+    var isMenuOpen = function () {
+      return menuDrop.classList.contains("is-open");
+    };
+
+    var openMenu = function () {
+      menuDrop.classList.add("is-open");
+      menuBackdrop.classList.add("is-open");
+      menuBtn.classList.add("is-open");
+      menuBtn.setAttribute("aria-expanded", "true");
+      document.body.classList.add("is-menu-open");
+
+      var first = menuDrop.querySelector(".menu-item");
+      if (first) {
+        window.setTimeout(function () {
+          try { first.focus({ preventScroll: true }); } catch (err) { first.focus(); }
+        }, 280);
+      }
+    };
+
+    var closeMenu = function (refocus) {
+      if (!isMenuOpen()) return;
+      menuDrop.classList.remove("is-open");
+      menuBackdrop.classList.remove("is-open");
+      menuBtn.classList.remove("is-open");
+      menuBtn.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("is-menu-open");
+      if (refocus) {
+        try { menuBtn.focus({ preventScroll: true }); } catch (err) { menuBtn.focus(); }
+      }
+    };
+
     menuBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      var open = menuDrop.classList.toggle("is-open");
-      menuBtn.classList.toggle("is-open", open);
-      menuBtn.setAttribute("aria-expanded", String(open));
+      if (isMenuOpen()) closeMenu(true);
+      else openMenu();
     });
 
-    document.addEventListener("click", function (e) {
-      if (!menuDrop.contains(e.target) && !menuBtn.contains(e.target)) {
-        menuDrop.classList.remove("is-open");
-        menuBtn.classList.remove("is-open");
-        menuBtn.setAttribute("aria-expanded", "false");
-      }
+    if (menuCloseBtn) {
+      menuCloseBtn.addEventListener("click", function () { closeMenu(true); });
+    }
+
+    menuBackdrop.addEventListener("click", function () { closeMenu(true); });
+
+    /* link tap -> drawer band, phir page khule */
+    menuDrop.addEventListener("click", function (e) {
+      if (e.target.closest(".menu-item")) closeMenu(false);
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") {
-        menuDrop.classList.remove("is-open");
-        menuBtn.classList.remove("is-open");
-        menuBtn.setAttribute("aria-expanded", "false");
-      }
+      if (e.key === "Escape") closeMenu(true);
     });
 
-    if (/\/mailbox\.html$/.test(window.location.pathname)) {
-      menuDrop.querySelector('[href$="mailbox.html"]').classList.add("is-active");
-    } else if (/\/index\.html$/.test(window.location.pathname) ||
-               window.location.pathname === "/" ||
-               window.location.pathname === "") {
-      menuDrop.querySelector('[href$="index.html"]').classList.add("is-active");
-    }
+    /* chhoti screen par browser back se bhi band ho */
+    window.addEventListener("popstate", function () { closeMenu(false); });
+
+    /* desktop resize par drawer band kar do */
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 900) closeMenu(false);
+    });
+
+    /* current page ko menu me highlight karo */
+    var currentPage = (window.location.pathname.split("/").pop() || "").toLowerCase();
+    if (!currentPage) currentPage = "index.html";
+
+    menuDrop.querySelectorAll(".menu-item").forEach(function (link) {
+      var href = (link.getAttribute("href") || "").split("/").pop().toLowerCase();
+      if (href && href === currentPage) link.classList.add("is-active");
+    });
   }
 
   /* ---------- Simple validation ---------- */
